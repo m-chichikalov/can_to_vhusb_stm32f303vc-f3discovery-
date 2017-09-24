@@ -10,6 +10,8 @@ extern void Init(void);
 extern void SystemClock_Config(void);
 extern void MX_GPIO_Init(void);
 
+extern void initialise_monitor_handles(void); /* prototype */
+
 /* Private function prototypes -----------------------------------------------*/
 
 int main(void) {
@@ -22,12 +24,16 @@ int main(void) {
 	/* Configure the system clock */
 	SystemClock_Config();
 
+	/* Turn on the semihosting */
+	initialise_monitor_handles();
+
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 
 	/* Infinite loop */
 	while (1) {
 		LL_GPIO_SetOutputPin(GPIOE, PinLed);
+		printf("hello world!\r\n");
 	}
 }
 

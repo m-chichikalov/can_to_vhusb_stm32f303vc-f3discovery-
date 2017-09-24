@@ -31,6 +31,14 @@
 /* Private define ------------------------------------------------------------*/
 #define PinLed GPIO_BSRR_BS_9  // led NORTH))
 
+/* define DEBUG_SEMIHOSTIG to turn it on  */
+//#define DEBUG_SEMIHOSTING
+
+#if !defined  (DEBUG_SEMIHOSTING)
+	#define printf
+	#define initialise_monitor_handles __NOP
+#endif /* USE_HAL_DRIVER */
+
 
 #ifndef NVIC_PRIORITYGROUP_0
 #define NVIC_PRIORITYGROUP_0         ((uint32_t)0x00000007) /*!< 0 bit  for pre-emption priority,

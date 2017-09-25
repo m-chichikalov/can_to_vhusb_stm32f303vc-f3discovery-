@@ -7,7 +7,7 @@
 #include "stm32f3xx_ll_cortex.h"
 //#include "stm32f3xx_ll_crc.h"
 //#include "stm32f3xx_ll_dac.h"
-//#include "stm32f3xx_ll_dma.h"
+#include "stm32f3xx_ll_dma.h"
 //#include "stm32f3xx_ll_exti.h"
 #if defined  (USE_HAL_DRIVER)
 	#include "stm32f3xx_ll_fmc.h"
@@ -23,20 +23,30 @@
 //#include "stm32f3xx_ll_spi.h"
 #include "stm32f3xx_ll_system.h"
 //#include "stm32f3xx_ll_tim.h"
-//#include "stm32f3xx_ll_usart.h"
+#include "stm32f3xx_ll_usart.h"
 #include "stm32f3xx_ll_utils.h"
 //#include "stm32f3xx_ll_wwdg.h"
 #include "stm32f3xx.h"
 
+#include "UART_functionality.h"
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "list.h"
+
 /* Private define ------------------------------------------------------------*/
 #define PinLed GPIO_BSRR_BS_9  // led NORTH))
 
+#define LENGTH_BUFFER 5
+
 /* define DEBUG_SEMIHOSTIG to turn it on  */
-//#define DEBUG_SEMIHOSTING
+
 
 #if !defined  (DEBUG_SEMIHOSTING)
-	#define printf
+	#define printf(__NN__) ((void)0U)
 	#define initialise_monitor_handles __NOP
+#else
+	#include <stdio.h>
 #endif /* USE_HAL_DRIVER */
 
 

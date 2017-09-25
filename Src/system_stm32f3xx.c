@@ -43,6 +43,8 @@
  */
 #include "main.h"
 
+extern char bufDMAtoUSART[LENGTH_BUFFER];
+
 #if !defined  (HSE_VALUE) 
 #define HSE_VALUE    ((uint32_t)8000000) /*!< Default value of the External oscillator in Hz.
                                                 This value can be provided and adapted by the user application. */
@@ -58,14 +60,14 @@
 /* #define VECT_TAB_SRAM */
 #define VECT_TAB_OFFSET  0x0 /*!< Vector Table base offset field. */
 
-  /* This variable is updated in three ways:
-      1) by calling CMSIS function SystemCoreClockUpdate()
-      2) by calling HAL API function HAL_RCC_GetHCLKFreq()
-      3) each time HAL_RCC_ClockConfig() is called to configure the system clock frequency
-         Note: If you use this function to configure the system clock there is no need to
-               call the 2 first functions listed above, since SystemCoreClock variable is 
-               updated automatically.
-  */
+/* This variable is updated in three ways:
+ 1) by calling CMSIS function SystemCoreClockUpdate()
+ 2) by calling HAL API function HAL_RCC_GetHCLKFreq()
+ 3) each time HAL_RCC_ClockConfig() is called to configure the system clock frequency
+ Note: If you use this function to configure the system clock there is no need to
+ call the 2 first functions listed above, since SystemCoreClock variable is
+ updated automatically.
+ */
 
 uint32_t SystemCoreClock = 8000000;
 
@@ -241,43 +243,51 @@ void Init(void) {
 /** System Clock Configuration  */
 void SystemClock_Config(void) {
 
-	MODIFY_REG(FLASH->ACR, FLASH_ACR_LATENCY, 0x00000000U);
+	LL_FLASH_SetLatency(LL_FLASH_LATENCY_1);
 
-	if ((uint32_t)(READ_BIT(FLASH->ACR, FLASH_ACR_LATENCY)) != 0x00000000U) {
+	if (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_1) {
 		Error_Handler();
 	}
+	LL_RCC_HSE_EnableBypass();
 
-	SET_BIT(RCC->CR, RCC_CR_HSION); // RCC_HSI_Enable
+	LL_RCC_HSE_Enable();
 
-	/* Wait till HSI is ready */
-	while ((READ_BIT(RCC->CR, RCC_CR_HSIRDY) == (RCC_CR_HSIRDY)) != 1) {
+	/* Wait till HSE is ready */
+	while (LL_RCC_HSE_IsReady() != 1) {
 
 	}
-	LL_RCC_HSI_SetCalibTrimming(16);
+	LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE_DIV_1, LL_RCC_PLL_MUL_6);
 
+	LL_RCC_PLL_Enable();
+
+	/* Wait till PLL is ready */
+	while (LL_RCC_PLL_IsReady() != 1) {
+
+	}
 	LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
 
-	LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
+	LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_2);
 
 	LL_RCC_SetAPB2Prescaler(LL_RCC_APB1_DIV_1);
 
-	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
 
 	/* Wait till System clock is ready */
-	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
+	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
 
 	}
-	LL_Init1msTick(8000000);
+	LL_Init1msTick(48000000);
 
 	LL_SYSTICK_SetClkSource(LL_SYSTICK_CLKSOURCE_HCLK);
 
-	LL_SetSystemCoreClock(8000000);
+	LL_SetSystemCoreClock(48000000);
+
+	LL_RCC_SetUSARTClockSource(LL_RCC_USART1_CLKSOURCE_SYSCLK);
 
 	/* SysTick_IRQn interrupt configuration */
 	NVIC_SetPriority(SysTick_IRQn,
 			NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
 }
-
 
 /** Configure pins as
  * Analog
@@ -287,12 +297,13 @@ void SystemClock_Config(void) {
  * EXTI
  */
 
-void MX_GPIO_Init(void) {
+void GPIO_Init(void) {
 
 	/* GPIO Ports Clock Enable */
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOF);
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOE);
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOC);
 
 	LL_GPIO_InitTypeDef GPIO_InitStruct;
 
@@ -300,13 +311,101 @@ void MX_GPIO_Init(void) {
 	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
 	GPIO_InitStruct.Pin = PinLed;
 	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-	if ((LL_GPIO_Init(GPIOE, &GPIO_InitStruct)) != SUCCESS)
-	{
+	if ((LL_GPIO_Init(GPIOE, &GPIO_InitStruct)) != SUCCESS) {
 		Error_Handler();
 	}
 
+	/*Init Uart */
+
+	LL_USART_InitTypeDef USART_InitStruct;
+
+	/* Peripheral clock enable */
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
+
+	/**USART1 GPIO Configuration
+	 PC4   ------> USART1_TX
+	 PC5   ------> USART1_RX
+	 */
+	GPIO_InitStruct.Pin = LL_GPIO_PIN_4 | LL_GPIO_PIN_5;
+	GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
+	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+	GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
+	GPIO_InitStruct.Alternate = LL_GPIO_AF_7;
+	LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+	USART_InitStruct.BaudRate = 115200;
+	USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
+	USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
+	USART_InitStruct.Parity = LL_USART_PARITY_NONE;
+	USART_InitStruct.TransferDirection = LL_USART_DIRECTION_TX_RX;
+	USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
+	USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
+
+	LL_USART_Init(USART1, &USART_InitStruct);
+
+	LL_USART_DisableIT_CTS(USART1);
+	LL_USART_DisableOverrunDetect(USART1);
+
+	LL_USART_ConfigAsyncMode(USART1);
+
+	LL_USART_EnableDMAReq_TX(USART1);
+	LL_USART_ClearFlag_TC(USART1);
+
+	LL_USART_Enable(USART1);
+
+//	NVIC_SetPriority(USART1_IRQn,
+//			NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
+//	NVIC_EnableIRQ(USART1_IRQn);
 
 
 
+	/* ------ DMA Init -------------   */
+	LL_DMA_InitTypeDef DMA_InitStruct;
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
 
+	DMA_InitStruct.Direction =              LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+	DMA_InitStruct.NbData =                 LENGTH_BUFFER;
+	DMA_InitStruct.Mode =                   LL_DMA_MODE_CIRCULAR;
+	DMA_InitStruct.Priority =               LL_DMA_PRIORITY_LOW;
+	DMA_InitStruct.MemoryOrM2MDstIncMode =  LL_DMA_MEMORY_INCREMENT;
+	DMA_InitStruct.PeriphOrM2MSrcIncMode =  LL_DMA_PERIPH_NOINCREMENT;
+	DMA_InitStruct.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
+	DMA_InitStruct.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_HALFWORD;
+	DMA_InitStruct.MemoryOrM2MDstAddress =  &bufDMAtoUSART[0];
+	DMA_InitStruct.PeriphOrM2MSrcAddress =  &(USART1->TDR);
+
+	LL_DMA_Init(DMA1, LL_DMA_CHANNEL_4, &DMA_InitStruct);
+
+	LL_DMA_DisableIT_HT(DMA1, LL_DMA_CHANNEL_4);
+	LL_DMA_DisableIT_TC(DMA1, LL_DMA_CHANNEL_4);
+	LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_4);
+//	LL_DMA_DisableIT_TE(DMA1, LL_DMA_CHANNEL_4);
+
+	NVIC_SetPriority(DMA1_Channel4_IRQn,
+			NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
+	NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+
+	LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_4);
+
+/*Init CAN */
+//	GPIO_InitTypeDef GPIO_InitStruct;
+//	if (hcan->Instance == CAN) {
+//		/* USER CODE BEGIN CAN_MspInit 0 */
+//
+//		/* USER CODE END CAN_MspInit 0 */
+//		/* Peripheral clock enable */
+//		__HAL_RCC_CAN1_CLK_ENABLE();
+//
+//		/**CAN GPIO Configuration
+//		 PA11     ------> CAN_RX
+//		 PA12     ------> CAN_TX
+//		 */
+//		GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
+//		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+//		GPIO_InitStruct.Pull = GPIO_NOPULL;
+//		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+//		GPIO_InitStruct.Alternate = GPIO_AF9_CAN;
+//		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+//	}
 }

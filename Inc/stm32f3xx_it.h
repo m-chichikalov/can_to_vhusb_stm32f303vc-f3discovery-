@@ -50,10 +50,20 @@ void HardFault_Handler(void);
 void MemManage_Handler(void);
 void BusFault_Handler(void);
 void UsageFault_Handler(void);
-void SVC_Handler(void);
+//void SVC_Handler(void);
 void DebugMon_Handler(void);
-void PendSV_Handler(void);
-void SysTick_Handler(void);
+//void PendSV_Handler(void);
+//void SysTick_Handler(void);
+//void USB_LP_IRQHandler(void);
+//void CAN_SCE_IRQHandler(void);
+//void CAN_RX1_IRQHandler(void);
+//void USB_LP_CAN_RX0_IRQHandler(void);
+//void USB_HP_CAN_TX_IRQHandler(void);
+void USART1_IRQHandler(void);
+void DMA1_Channel4_IRQHandler(void);
+
+
+
 
 #ifdef __cplusplus
 }

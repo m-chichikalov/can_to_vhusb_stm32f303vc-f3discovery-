@@ -20,7 +20,7 @@ extern void Init(void);
 extern void SystemInit(void);
 extern void SystemCoreClockUpdate(void);
 extern void SystemClock_Config(void);
-extern void MX_GPIO_Init(void);
+extern void GPIO_Init(void);
 
 
 

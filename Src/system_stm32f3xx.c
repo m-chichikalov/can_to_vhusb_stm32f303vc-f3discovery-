@@ -307,10 +307,10 @@ void GPIO_Init(void) {
 
 	LL_GPIO_InitTypeDef GPIO_InitStruct;
 
-	GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-	GPIO_InitStruct.Pin = PinLed;
-	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+	GPIO_InitStruct.Mode =                 LL_GPIO_MODE_OUTPUT;
+	GPIO_InitStruct.OutputType =           LL_GPIO_OUTPUT_PUSHPULL;
+	GPIO_InitStruct.Pin =                  PinLed;
+	GPIO_InitStruct.Speed =                LL_GPIO_SPEED_FREQ_LOW;
 	if ((LL_GPIO_Init(GPIOE, &GPIO_InitStruct)) != SUCCESS) {
 		Error_Handler();
 	}
@@ -326,23 +326,26 @@ void GPIO_Init(void) {
 	 PC4   ------> USART1_TX
 	 PC5   ------> USART1_RX
 	 */
-	GPIO_InitStruct.Pin = LL_GPIO_PIN_4 | LL_GPIO_PIN_5;
-	GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-	GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
-	GPIO_InitStruct.Alternate = LL_GPIO_AF_7;
-	LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin =                  LL_GPIO_PIN_4 | LL_GPIO_PIN_5;
+	GPIO_InitStruct.Mode =                 LL_GPIO_MODE_ALTERNATE;
+	GPIO_InitStruct.Speed =                LL_GPIO_SPEED_FREQ_HIGH;
+	GPIO_InitStruct.OutputType =           LL_GPIO_OUTPUT_PUSHPULL;
+	GPIO_InitStruct.Pull =                 LL_GPIO_PULL_UP;
+	GPIO_InitStruct.Alternate =            LL_GPIO_AF_7;
+	if ((LL_GPIO_Init(GPIOC, &GPIO_InitStruct)) != SUCCESS) {
+		Error_Handler();
+	}
 
-	USART_InitStruct.BaudRate = 115200;
-	USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
-	USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
-	USART_InitStruct.Parity = LL_USART_PARITY_NONE;
-	USART_InitStruct.TransferDirection = LL_USART_DIRECTION_TX_RX;
+	USART_InitStruct.BaudRate =            115200;
+	USART_InitStruct.DataWidth =           LL_USART_DATAWIDTH_8B;
+	USART_InitStruct.StopBits =            LL_USART_STOPBITS_1;
+	USART_InitStruct.Parity =              LL_USART_PARITY_NONE;
+	USART_InitStruct.TransferDirection =   LL_USART_DIRECTION_TX_RX;
 	USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
-	USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
-
-	LL_USART_Init(USART1, &USART_InitStruct);
+	USART_InitStruct.OverSampling =        LL_USART_OVERSAMPLING_16;
+	if ((LL_USART_Init(USART1, &USART_InitStruct)) != SUCCESS) {
+		Error_Handler();
+	}
 
 	LL_USART_DisableIT_CTS(USART1);
 	LL_USART_DisableOverrunDetect(USART1);
@@ -372,10 +375,11 @@ void GPIO_Init(void) {
 	DMA_InitStruct.PeriphOrM2MSrcIncMode =  LL_DMA_PERIPH_NOINCREMENT;
 	DMA_InitStruct.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
 	DMA_InitStruct.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_HALFWORD;
-	DMA_InitStruct.MemoryOrM2MDstAddress =  &bufDMAtoUSART[0];
-	DMA_InitStruct.PeriphOrM2MSrcAddress =  &(USART1->TDR);
-
-	LL_DMA_Init(DMA1, LL_DMA_CHANNEL_4, &DMA_InitStruct);
+	DMA_InitStruct.MemoryOrM2MDstAddress =  (uint32_t)(&bufDMAtoUSART[0]);
+	DMA_InitStruct.PeriphOrM2MSrcAddress =  (uint32_t)(&(USART1->TDR));
+	if ((LL_DMA_Init(DMA1, LL_DMA_CHANNEL_4, &DMA_InitStruct)) != SUCCESS) {
+		Error_Handler();
+	}
 
 	LL_DMA_DisableIT_HT(DMA1, LL_DMA_CHANNEL_4);
 	LL_DMA_DisableIT_TC(DMA1, LL_DMA_CHANNEL_4);
@@ -388,24 +392,40 @@ void GPIO_Init(void) {
 
 	LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_4);
 
-/*Init CAN */
-//	GPIO_InitTypeDef GPIO_InitStruct;
-//	if (hcan->Instance == CAN) {
-//		/* USER CODE BEGIN CAN_MspInit 0 */
-//
-//		/* USER CODE END CAN_MspInit 0 */
-//		/* Peripheral clock enable */
-//		__HAL_RCC_CAN1_CLK_ENABLE();
-//
-//		/**CAN GPIO Configuration
-//		 PA11     ------> CAN_RX
-//		 PA12     ------> CAN_TX
-//		 */
-//		GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
-//		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-//		GPIO_InitStruct.Pull = GPIO_NOPULL;
-//		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-//		GPIO_InitStruct.Alternate = GPIO_AF9_CAN;
-//		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-//	}
+/*---------Init CAN pins--------------------*/
+		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_CAN);
+		/**CAN GPIO Configuration
+		 PA11     ------> CAN_RX
+		 PA12     ------> CAN_TX
+		 */
+		GPIO_InitStruct.Pin = LL_GPIO_PIN_11 | LL_GPIO_PIN_12;
+		GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+		GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+		GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
+		GPIO_InitStruct.Alternate = LL_GPIO_AF_9;
+		if ((LL_GPIO_Init(GPIOA, &GPIO_InitStruct)) != SUCCESS) {
+			Error_Handler();
+		}
+
+		uint32_t BaudRadePrescaler;
+		CanInitStruct InitStruct;
+
+		BaudRadePrescaler = 16;
+		InitStruct.BTR =   (CAN_MODE_SILENT_LOOPBACK |
+				                         CAN_SJW_1TQ |
+							             CAN_BS1_6TQ |
+		                                 CAN_BS2_8TQ |
+		         ((uint32_t) BaudRadePrescaler + 1U) );
+
+		InitStruct.MCR = ((0x0U << CAN_MCR_TTCM_Pos) |
+				          (0x0U << CAN_MCR_ABOM_Pos) |
+						  (0x0U << CAN_MCR_AWUM_Pos) |
+						  (0x0U << CAN_MCR_NART_Pos) |
+						  (0x0U << CAN_MCR_RFLM_Pos) |
+						  (0x0U << CAN_MCR_TXFP_Pos) |
+						  (0x1U << CAN_MCR_DBF_Pos)  );
+
+
+		ErrorStatus status = Can_Init(&InitStruct);
+		BaudRadePrescaler = 36;
 }

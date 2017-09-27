@@ -27,6 +27,7 @@ const char *pcTextForTask2 = "Task 2 is running\n";
 extern void Init(void);
 extern void SystemClock_Config(void);
 extern void GPIO_Init(void);
+void InitCAN(void);
 
 extern void initialise_monitor_handles(void); /* prototype */
 
@@ -62,11 +63,9 @@ int main(void) {
 	vTaskStartScheduler();
 
 	/* Infinite loop */
-	while (1) {
-		LL_GPIO_SetOutputPin(GPIOE, PinLed);
-		printf("hello world!\r\n");
-	}
+	while (1) {}
 }
+
 
 /**
  * This function is executed in case of error occurrence.
@@ -78,21 +77,12 @@ void _Error_Handler(char * file, int line) {
 }
 
 void vTaskSet(void *pvParameters) {
-	const char * buf = "Hello world!";
-	uint32_t i;
+//	const char * buf = "Hello world!";
+//	uint32_t i;
 	for (;;) {
 		LL_GPIO_TogglePin(GPIOE, PinLed);
 		bufDMAtoUSART[0] += 1;
 		bufDMAtoUSART[1] += 2;
-//
-//		i = 0;
-//		while (buf[i] != 0x00){
-//			USART1 ->TDR = (uint16_t)(buf[i++]);
-//			while (!LL_USART_IsActiveFlag_TXE(USART1))
-//			{
-//				__NOP();
-//			}
-//		}
 		vTaskDelay(500);
 
 	}

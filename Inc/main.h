@@ -3,6 +3,7 @@
   /* Includes ------------------------------------------------------------------*/
 //#include "stm32f3xx_ll_adc.h"
 #include "stm32f3xx_ll_bus.h"
+#include "stm32f3xx_ll_can.h"
 //#include "stm32f3xx_ll_comp.h"
 #include "stm32f3xx_ll_cortex.h"
 //#include "stm32f3xx_ll_crc.h"

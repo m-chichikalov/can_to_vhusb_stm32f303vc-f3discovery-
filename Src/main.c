@@ -27,7 +27,6 @@ const char *pcTextForTask2 = "Task 2 is running\n";
 extern void Init(void);
 extern void SystemClock_Config(void);
 extern void GPIO_Init(void);
-void InitCAN(void);
 
 extern void initialise_monitor_handles(void); /* prototype */
 

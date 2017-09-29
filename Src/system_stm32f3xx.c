@@ -411,21 +411,48 @@ void GPIO_Init(void) {
 		CanInitStruct InitStruct;
 
 		BaudRadePrescaler = 16;
-		InitStruct.BTR =   (CAN_MODE_SILENT_LOOPBACK |
+		InitStruct.BTR =   (
+				/* Silent/Loop Back MODE                  */
+							CAN_MODE_SILENT_LOOPBACK |
+				/* Re-synchronization jump width          */
 				                         CAN_SJW_1TQ |
+				/* Time segment 1                         */
 							             CAN_BS1_6TQ |
+				/* Time segment 2                         */
 		                                 CAN_BS2_8TQ |
+			    /* Baud rate prescaler                    */
 		         ((uint32_t) BaudRadePrescaler + 1U) );
 
-		InitStruct.MCR = ((0x0U << CAN_MCR_TTCM_Pos) |
+		InitStruct.MCR = (
+				/* Set the time triggered communication mode */
+				          (0x0U << CAN_MCR_TTCM_Pos) |
+				/* Set the automatic bus-off management      */
 				          (0x0U << CAN_MCR_ABOM_Pos) |
+				/* Set the automatic wake-up mode            */
 						  (0x0U << CAN_MCR_AWUM_Pos) |
+				/* Set the no automatic retransmission       */
 						  (0x0U << CAN_MCR_NART_Pos) |
+				/* Set the receive FIFO locked mode          */
 						  (0x0U << CAN_MCR_RFLM_Pos) |
+				/* Set the transmit FIFO priority            */
 						  (0x0U << CAN_MCR_TXFP_Pos) |
+				/* Debug freeze                              */
 						  (0x1U << CAN_MCR_DBF_Pos)  );
 
 
 		ErrorStatus status = Can_Init(&InitStruct);
-		BaudRadePrescaler = 36;
+
+		CanFilterInitStruct BankInit;
+		BankInit.BankActivation = ENABLE;
+		BankInit.FifoAssignment = CAN_BANK_FIFO0;
+		BankInit.BankMode = CAN_BANKMODE_IDMASK;
+		BankInit.BankScale = CAN_BANKSCALE_32BIT;
+		BankInit.FiltersBankNumber = 0;
+
+		BankInit.FxR1 = (0x100 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1);  // ID
+		BankInit.FxR2 = (0x700 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1); // Mask
+
+		status = Can_FilterInit(&BankInit);
+
+
 }

@@ -18,6 +18,22 @@ typedef struct {
 	uint32_t BTR; //Bit timing register
 } CanInitStruct;
 
+typedef struct {
+	uint8_t FiltersBankNumber ; // - Specifies the filter which will be initialized.
+	uint8_t  FifoAssignment; // Specifies the FIFO (0 or 1U) which will be assigned to the filter.
+	uint8_t  BankMode; // Specifies the bank mode to be initialized.
+	uint8_t  BankScale; //Specifies the bank scale.
+	uint8_t BankActivation; // Enable or disable the bank.
+	uint32_t FxR1;
+//	uint16_t FxR1H;
+	uint32_t FxR2;
+//	uint16_t FxR2H;
+}CanFilterInitStruct;
+
+//typedef struct {
+//
+//}CanFilter32BitMaskStruct;
+
  /* Exported constants --------------------------------------------------------*/
 #define CAN_ERROR_NONE              (0x00000000U)  /*!< No error             */
 #define CAN_ERROR_EWG               (0x00000001U)  /*!< EWG error            */
@@ -77,23 +93,20 @@ typedef struct {
 #define CAN_MCR_DBF          CAN_MCR_DBF_Msk
 
 
-#define CAN_FILTERMODE_IDMASK       ((uint8_t)0x00U)  /*!< Identifier mask mode */
-#define CAN_FILTERMODE_IDLIST       ((uint8_t)0x01U)  /*!< Identifier list mode */
+#define CAN_BANKMODE_IDMASK       ((uint8_t)0x00U)  /*!< Identifier mask mode */
+#define CAN_BANKMODE_IDLIST       ((uint8_t)0x01U)  /*!< Identifier list mode */
 
-#define CAN_FILTERSCALE_16BIT       ((uint8_t)0x00U)  /*!< Two 16-bit filters */
-#define CAN_FILTERSCALE_32BIT       ((uint8_t)0x01U)  /*!< One 32-bit filter  */
+#define CAN_BANKSCALE_16BIT       ((uint8_t)0x00U)  /*!< Two 16-bit filters */
+#define CAN_BANKSCALE_32BIT       ((uint8_t)0x01U)  /*!< One 32-bit filter  */
 
-#define CAN_FILTER_FIFO0            ((uint8_t)0x00U)  /*!< Filter FIFO 0 assignment for filter x */
-#define CAN_FILTER_FIFO1            ((uint8_t)0x01U)  /*!< Filter FIFO 1 assignment for filter x */
+#define CAN_BANK_FIFO0            ((uint8_t)0x00U)  /*!< Filter FIFO 0 assignment for filter x */
+#define CAN_BANK_FIFO1            ((uint8_t)0x01U)  /*!< Filter FIFO 1 assignment for filter x */
 
 #define CAN_ID_STD                  (0x00000000U)  /*!< Standard Id */
 #define CAN_ID_EXT                  (0x00000004U)  /*!< Extended Id */
 
 #define CAN_RTR_DATA                (0x00000000U)  /*!< Data frame */
 #define CAN_RTR_REMOTE              (0x00000002U)  /*!< Remote frame */
-
-#define CAN_FIFO0                   ((uint8_t)0x00U)  /*!< CAN FIFO 0 used to receive */
-#define CAN_FIFO1                   ((uint8_t)0x01U)  /*!< CAN FIFO 1 used to receive */
 
 /* Transmit Flags */
 #define CAN_FLAG_RQCP0             (0x00000500U)  /*!< Request MailBox0 flag         */
@@ -159,6 +172,8 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
  ErrorStatus Can_Init(CanInitStruct* Init);
+ ErrorStatus Can_DeInit(void);
+ ErrorStatus Can_FilterInit(CanFilterInitStruct* Init);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -170,6 +185,8 @@ typedef struct {
 /* Private Macros -----------------------------------------------------------*/
 #define IS_BIT_CLEAR(REG, BIT)   (! ((REG) & (BIT)))
 #define IS_BIT_SET(REG, BIT)     ((REG) & (BIT))
+
+#define MODIFY_BIT(REG, MEANING, POS)  (REG) = (((REG) & (~(1 << POS))) | (MEANING << POS))
 
 #ifdef __cplusplus
  } /*  __cplusplus  */

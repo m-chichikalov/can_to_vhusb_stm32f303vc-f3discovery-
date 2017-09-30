@@ -103,6 +103,9 @@ void vTaskReset(void *pvParameters) {
 static void TX_CAN_Frame(TimerHandle_t xTimer)
 {
 	TXmessageCANstruct txMessageCAN;
+	txMessageCAN.StdId = 0x010;
+	txMessageCAN.IDE = CAN_ID_STD;
+	txMessageCAN.RTR = CAN_RTR_DATA;
 	txMessageCAN.DLC = 2;
 	txMessageCAN.Data[0] = 0xf5;
 	txMessageCAN.Data[1] = 0x5f;

@@ -110,8 +110,6 @@ static void TX_CAN_Frame(TimerHandle_t xTimer)
 	txMessageCAN.Data[0] = 0xf5;
 	txMessageCAN.Data[1] = 0x5f;
 	CAN_TX(&txMessageCAN);
-
-
 }
 
 #ifdef USE_FULL_ASSERT

@@ -83,6 +83,18 @@ ErrorStatus Can_DeInit(void) {
 }
 
 /*
+ *  	Identifier.
+ *    	Each bit of the register specifies the level of the corresponding bit of
+ *    the expected identifier.
+ *    0 - Dominant bit is expected.
+ *    1 - Recessive bit is expected.
+ *
+ *    	Mask.
+ *    	Each bit of the register specifies whether the bit of the associated identifier
+ *    register must match with the corresponding identifier register of the filter.
+ *    0 - Do not care, the bit is not used for the comparison.
+ *    1 - Must match, the bit of the incoming identifier must have the same level has
+ *    specified in the corresponding identifier register of the filter.
  *
  *
  * ---32Bit Identifier Mask filter
@@ -129,6 +141,12 @@ ErrorStatus Can_FilterInit(CanFilterInitStruct* Init) {
 	CLEAR_BIT(CAN->FMR, CAN_FMR_FINIT);
 
 	return SUCCESS;
+}
+
+
+void CAN_TX(TXmessageCANstruct* txMessageCAN)
+{
+
 }
 
 /*******************************END OF FILE***********************************/

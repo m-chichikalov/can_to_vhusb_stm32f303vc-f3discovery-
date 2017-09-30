@@ -448,9 +448,23 @@ void GPIO_Init(void) {
 		BankInit.BankMode = CAN_BANKMODE_IDMASK;
 		BankInit.BankScale = CAN_BANKSCALE_32BIT;
 		BankInit.FiltersBankNumber = 0;
-
-		BankInit.FxR1 = (0x100 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1);  // ID
-		BankInit.FxR2 = (0x700 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1); // Mask
+/*
+ *    	Identifier.
+ *    	Each bit of the register specifies the level of the corresponding bit of
+ *    the expected identifier.
+ *    0 - Dominant bit is expected.
+ *    1 - Recessive bit is expected.
+ *
+ *    	Mask.
+ *    	Each bit of the register specifies whether the bit of the associated identifier
+ *    register must match with the corresponding identifier register of the filter.
+ *    0 - Do not care, the bit is not used for the comparison.
+ *    1 - Must match, the bit of the incoming identifier must have the same level has
+ *    specified in the corresponding identifier register of the filter.
+ *
+ */
+		BankInit.FxR1 = (0x000 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1);  // ID
+		BankInit.FxR2 = (0x000 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1); // Mask
 
 		status = Can_FilterInit(&BankInit);
 

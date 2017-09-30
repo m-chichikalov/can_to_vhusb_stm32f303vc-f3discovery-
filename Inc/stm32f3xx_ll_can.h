@@ -30,24 +30,49 @@ typedef struct {
 //	uint16_t FxR2H;
 }CanFilterInitStruct;
 
-//typedef struct {
-//
-//}CanFilter32BitMaskStruct;
+typedef struct {
+	  uint32_t StdId;
+	  /*!< Specifies the standard identifier.
+	  This parameter must be a number between Min_Data = 0 and Max_Data = 0x7FF. */
+	  uint32_t ExtId;
+	  /*!< Specifies the extended identifier.
+	  This parameter must be a number between Min_Data = 0 and Max_Data = 0x1FFFFFFF. */
+	  uint32_t IDE;
+	  /*!< Specifies the type of identifier for the message that will be transmitted.
+	  This parameter can be a value of CAN_identifier_type */
+	  uint32_t RTR;
+	  /*!< Specifies the type of frame for the message that will be transmitted.
+	  This parameter can be a value of CAN_remote_transmission_request */
+	  uint32_t DLC;
+	  /*!< Specifies the length of the frame that will be transmitted.
+	  This parameter must be a number between Min_Data = 0 and Max_Data = 8. */
+	  uint8_t Data[8];
+	  /*!< Contains the data to be transmitted.
+	  This parameter must be a number between Min_Data = 0 and Max_Data = 0xFF. */
+
+}TXmessageCANstruct;
 
  /* Exported constants --------------------------------------------------------*/
-#define CAN_ERROR_NONE              (0x00000000U)  /*!< No error             */
-#define CAN_ERROR_EWG               (0x00000001U)  /*!< EWG error            */
-#define CAN_ERROR_EPV               (0x00000002U)  /*!< EPV error            */
-#define CAN_ERROR_BOF               (0x00000004U)  /*!< BOF error            */
-#define CAN_ERROR_STF               (0x00000008U)  /*!< Stuff error          */
-#define CAN_ERROR_FOR               (0x00000010U)  /*!< Form error           */
-#define CAN_ERROR_ACK               (0x00000020U)  /*!< Acknowledgment error */
-#define CAN_ERROR_BR                (0x00000040U)  /*!< Bit recessive        */
-#define CAN_ERROR_BD                (0x00000080U)  /*!< LEC dominant         */
-#define CAN_ERROR_CRC               (0x00000100U)  /*!< LEC transfer error   */
-#define CAN_ERROR_FOV0              (0x00000200U)  /*!< FIFO0 overrun error  */
-#define CAN_ERROR_FOV1              (0x00000400U)  /*!< FIFO1 overrun error  */
-#define CAN_ERROR_TXFAIL            (0x00000800U)  /*!< Transmit failure     */
+/* CAN_identifier_type */
+#define CAN_ID_STD                  (0x00000000U)  /*!< Standard Id */
+#define CAN_ID_EXT                  (0x00000004U)  /*!< Extended Id */
+/* CAN_remote_transmission_request */
+#define CAN_RTR_DATA                (0x00000000U)  /*!< Data frame */
+#define CAN_RTR_REMOTE              (0x00000002U)  /*!< Remote frame */
+
+//#define CAN_ERROR_NONE              (0x00000000U)  /*!< No error             */
+//#define CAN_ERROR_EWG               (0x00000001U)  /*!< EWG error            */
+//#define CAN_ERROR_EPV               (0x00000002U)  /*!< EPV error            */
+//#define CAN_ERROR_BOF               (0x00000004U)  /*!< BOF error            */
+//#define CAN_ERROR_STF               (0x00000008U)  /*!< Stuff error          */
+//#define CAN_ERROR_FOR               (0x00000010U)  /*!< Form error           */
+//#define CAN_ERROR_ACK               (0x00000020U)  /*!< Acknowledgment error */
+//#define CAN_ERROR_BR                (0x00000040U)  /*!< Bit recessive        */
+//#define CAN_ERROR_BD                (0x00000080U)  /*!< LEC dominant         */
+//#define CAN_ERROR_CRC               (0x00000100U)  /*!< LEC transfer error   */
+//#define CAN_ERROR_FOV0              (0x00000200U)  /*!< FIFO0 overrun error  */
+//#define CAN_ERROR_FOV1              (0x00000400U)  /*!< FIFO1 overrun error  */
+//#define CAN_ERROR_TXFAIL            (0x00000800U)  /*!< Transmit failure     */
 
 #define CAN_INITSTATUS_FAILED       (0x00000000U)  /*!< CAN initialization failed */
 #define CAN_INITSTATUS_SUCCESS      (0x00000001U)  /*!< CAN initialization OK */
@@ -101,12 +126,6 @@ typedef struct {
 
 #define CAN_BANK_FIFO0            ((uint8_t)0x00U)  /*!< Filter FIFO 0 assignment for filter x */
 #define CAN_BANK_FIFO1            ((uint8_t)0x01U)  /*!< Filter FIFO 1 assignment for filter x */
-
-#define CAN_ID_STD                  (0x00000000U)  /*!< Standard Id */
-#define CAN_ID_EXT                  (0x00000004U)  /*!< Extended Id */
-
-#define CAN_RTR_DATA                (0x00000000U)  /*!< Data frame */
-#define CAN_RTR_REMOTE              (0x00000002U)  /*!< Remote frame */
 
 /* Transmit Flags */
 #define CAN_FLAG_RQCP0             (0x00000500U)  /*!< Request MailBox0 flag         */
@@ -174,6 +193,8 @@ typedef struct {
  ErrorStatus Can_Init(CanInitStruct* Init);
  ErrorStatus Can_DeInit(void);
  ErrorStatus Can_FilterInit(CanFilterInitStruct* Init);
+
+ void CAN_TX(TXmessageCANstruct* txMessageCAN);
 
 /* Private variables ---------------------------------------------------------*/
 

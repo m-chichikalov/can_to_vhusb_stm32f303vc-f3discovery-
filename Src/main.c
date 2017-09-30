@@ -11,7 +11,6 @@
 #include "main.h"
 
 /* Private variables ---------------------------------------------------------*/
-//CAN_HandleTypeDef hcan;  // need HAL
 
 /*--- buffer for DMA USART1-TX ----------*/
 char bufDMAtoUSART[50];
@@ -33,6 +32,7 @@ extern void initialise_monitor_handles(void); /* prototype */
 /* Private function prototypes -----------------------------------------------*/
 void vTaskSet(void *pvParameters);
 void vTaskReset(void *pvParameters);
+static void TX_CAN_Frame(TimerHandle_t xTimer);
 
 int main(void) {
 	/* MCU Configuration----------------------------------------------------------*/
@@ -59,6 +59,11 @@ int main(void) {
 
 	xTaskCreate(vTaskSet, "TSetPinLed", 256, (void*) pcTextForTask1, 1, &xTask1Handle);
 //	  xTaskCreate(vTaskReset, "Task_2", 256, (void*)pcTextForTask2, 1, &xTask2Handle);
+
+	// create timer which will send one frame every 500 ms
+    // just for testing
+	TimerHandle_t txTimer = xTimerCreate("TXcan", 500, pdTRUE, 0, TX_CAN_Frame);
+	xTimerStart(txTimer, 0);
 	vTaskStartScheduler();
 
 	/* Infinite loop */
@@ -93,6 +98,16 @@ void vTaskReset(void *pvParameters) {
 		vTaskDelay(500);
 
 	}
+}
+
+static void TX_CAN_Frame(TimerHandle_t xTimer)
+{
+	TXmessageCANstruct txMessageCAN;
+	txMessageCAN.DLC = 2;
+	txMessageCAN.Data[0] = 0xf5;
+	txMessageCAN.Data[1] = 0x5f;
+	CAN_TX(&txMessageCAN);
+
 }
 
 #ifdef USE_FULL_ASSERT

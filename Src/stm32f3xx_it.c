@@ -6,6 +6,9 @@
 //extern PCD_HandleTypeDef hpcd_USB_FS;
 //extern CAN_HandleTypeDef hcan;
 extern 	void __USART1_Handler(void);
+extern  void CAN_IRQ_RX0_Handler(void);
+extern  void CAN_IRQ_RX1_Handler(void);
+extern  void CAN_IRQ_SCE_Handler(void);
 
 
 /******************************************************************************/
@@ -66,9 +69,9 @@ void USART1_IRQHandler(void)
 
 void DMA1_Channel4_IRQHandler(void)
 {
-	while(1){
+
 		__NOP();
-	}
+
 }
 
 void USB_LP_IRQHandler(void)
@@ -76,19 +79,19 @@ void USB_LP_IRQHandler(void)
 //  HAL_PCD_IRQHandler(&hpcd_USB_FS);
 }
 
-//void CAN_SCE_IRQHandler(void)
-//{
-//	HAL_CAN_IRQHandler(&hcan);
-//}
-//void CAN_RX1_IRQHandler(void)
-//{
-//	HAL_CAN_IRQHandler(&hcan);
-//}
-//void USB_LP_CAN_RX0_IRQHandler(void)
-//{
-//	HAL_CAN_IRQHandler(&hcan);
-//}
+void CAN_SCE_IRQHandler(void)
+{
+	CAN_IRQ_SCE_Handler();
+}
+void CAN_RX1_IRQHandler(void)
+{
+	CAN_IRQ_RX1_Handler();
+}
+void USB_LP_CAN_RX0_IRQHandler(void)
+{
+	CAN_IRQ_RX0_Handler();
+}
 //void USB_HP_CAN_TX_IRQHandler(void)
 //{
-//	HAL_CAN_IRQHandler(&hcan);
+//	CAN_IRQ_RX0_Handler();
 //}

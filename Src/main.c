@@ -9,14 +9,14 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+//#include <stdio.h>
 
 /* Private variables ---------------------------------------------------------*/
 
 /*--- buffer for DMA USART1-TX ----------*/
 char bufDMAtoUSART[50];
 
-xTaskHandle xTask1Handle;
-xTaskHandle xTask2Handle;
+xTaskHandle xTask1Handle, xTaskSendCanFrameToUsartHandle;
 
 /* Private variables ---------------------------------------------------------*/
 const char *pcTextForTask1 = "Task 1 is running\n";
@@ -30,8 +30,8 @@ extern void GPIO_Init(void);
 extern void initialise_monitor_handles(void); /* prototype */
 
 /* Private function prototypes -----------------------------------------------*/
-void vTaskSet(void *pvParameters);
-void vTaskReset(void *pvParameters);
+void vTaskToggleLed(void *pvParameters);
+static void vTaskSendCanFrameToUsart(void *pvParameters);
 static void TX_CAN_Frame(TimerHandle_t xTimer);
 
 int main(void) {
@@ -45,8 +45,8 @@ int main(void) {
 	SystemClock_Config();
 
 	/* Turn on the semihosting */
-	initialise_monitor_handles();
-	printf("hello world!\r\n");
+//	initialise_monitor_handles();
+//	printf("hello world!\r\n");
 
 	/* Initialize all configured peripherals */
 	GPIO_Init();
@@ -57,12 +57,14 @@ int main(void) {
 	vTraceEnable(TRC_INIT);
 #endif
 
-	xTaskCreate(vTaskSet, "TSetPinLed", 256, (void*) pcTextForTask1, 1, &xTask1Handle);
-//	  xTaskCreate(vTaskReset, "Task_2", 256, (void*)pcTextForTask2, 1, &xTask2Handle);
+	xTaskCreate(vTaskToggleLed, "ToggelPinLed", 256, (void*) pcTextForTask1, 0, &xTask1Handle);
+	xTaskCreate(vTaskSendCanFrameToUsart,
+			    "Task_2", 512,
+				(void*)pcTextForTask2, 1, &xTaskSendCanFrameToUsartHandle);
 
 	// create timer which will send one frame every 500 ms
     // just for testing
-	TimerHandle_t txTimer = xTimerCreate("TXcan", 500, pdTRUE, 0, TX_CAN_Frame);
+	TimerHandle_t txTimer = xTimerCreate("TXcan", 1000, pdTRUE, 0, TX_CAN_Frame);
 	xTimerStart(txTimer, 0);
 	vTaskStartScheduler();
 
@@ -80,38 +82,82 @@ void _Error_Handler(char * file, int line) {
 	}
 }
 
-void vTaskSet(void *pvParameters) {
-//	const char * buf = "Hello world!";
-//	uint32_t i;
+void vTaskToggleLed(void *pvParameters) {
 	for (;;) {
 		LL_GPIO_TogglePin(GPIOE, PinLed);
-		bufDMAtoUSART[0] += 1;
-		bufDMAtoUSART[1] += 2;
 		vTaskDelay(500);
-
 	}
 }
 
-void vTaskReset(void *pvParameters) {
+static void vTaskSendCanFrameToUsart(void *pvParameters) {
+	uint32_t pendingFrameFromCAN = 0;
+	RXmessageCANstruct rxMessageCAN;
 	for (;;) {
-		LL_GPIO_ResetOutputPin(GPIOE, PinLed);
-		vTaskDelay(500);
+		pendingFrameFromCAN = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+		if (pendingFrameFromCAN != 0) {
+//			Receive from CAN pending frame.
+			uint8_t pendingMessages = __CAN_GET_MSG_PENDING(CAN_BANK_FIFO0);
+			if (pendingMessages != 0) {
+//		read date from FIFO_0 output
+				rxMessageCAN.IDE = (uint32_t)(CAN->sFIFOMailBox[CAN_BANK_FIFO0].RIR & (1 << 2));
+				rxMessageCAN.RTR = (uint32_t)(CAN->sFIFOMailBox[CAN_BANK_FIFO0].RIR & (1 << 1));
+				if (rxMessageCAN.IDE == CAN_ID_STD) {
+					rxMessageCAN.StdId = (uint32_t)(CAN->sFIFOMailBox[CAN_BANK_FIFO0].RIR >> 21);
+				} else {
+					rxMessageCAN.ExtId = (uint32_t)(CAN->sFIFOMailBox[CAN_BANK_FIFO0].RIR >> 3);
+				}
+				rxMessageCAN.DLC = (uint32_t)(CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDTR & (uint32_t)0x0f);
+				rxMessageCAN.Data[0] = (uint8_t) (CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDLR & 0x000000ff);
+				rxMessageCAN.Data[1] = (uint8_t)((CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDLR & 0x0000ff00) >> 8);
+				rxMessageCAN.Data[2] = (uint8_t)((CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDLR & 0x00ff0000) >> 16);
+				rxMessageCAN.Data[3] = (uint8_t)((CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDLR & 0xff000000) >> 24);
 
+				rxMessageCAN.Data[4] = (uint8_t)(CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDHR & 0x000000ff);
+				rxMessageCAN.Data[5] = (uint8_t)((CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDHR & 0x0000ff00) >> 8);
+				rxMessageCAN.Data[6] = (uint8_t)((CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDHR & 0x00ff0000) >> 16);
+				rxMessageCAN.Data[7] = (uint8_t)((CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDHR & 0xff000000) >> 24);
+				__CAN_FIFO_RELEASE(CAN_BANK_FIFO0);
+				__CAN_ENABLE_IT(CAN_IT_FMP0);
+//			Format the string using sprintf
+				sprintf(bufDMAtoUSART, "StdID = %lX \r\n", rxMessageCAN.StdId);
+//			Send this string to DMA
+				LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_4);
+				LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_4, LENGTH_BUFFER);
+				LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_4);
+			}
+		}
+	}
+}
+
+void CAN_IRQ_RX0_Handler(void){
+//	Proceed reception of new message
+	BaseType_t xHigherPriorityTaskWoken;
+	uint8_t pendingMessages = __CAN_GET_MSG_PENDING(CAN_BANK_FIFO0);
+	if (pendingMessages != 0U ) {
+//		throw TaskNotify to vTaskSendCanFrameToUsart
+		__CAN_DISABLE_IT(CAN_IT_FMP0);
+		xHigherPriorityTaskWoken = pdFALSE;
+		vTaskNotifyGiveFromISR(xTaskSendCanFrameToUsartHandle, &xHigherPriorityTaskWoken);
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	}
 }
 
 static void TX_CAN_Frame(TimerHandle_t xTimer)
 {
 	TXmessageCANstruct txMessageCAN;
-	txMessageCAN.StdId = 0x010;
+	txMessageCAN.StdId = 0x110;
 	txMessageCAN.IDE = CAN_ID_STD;
 	txMessageCAN.RTR = CAN_RTR_DATA;
-	txMessageCAN.DLC = 2;
-	txMessageCAN.Data[0] = 0xf5;
-	txMessageCAN.Data[1] = 0x5f;
+	txMessageCAN.DLC = 8;
+	txMessageCAN.Data[0] = 0x00;
+	txMessageCAN.Data[1] = 0x01;
+	txMessageCAN.Data[2] = 0x02;
+	txMessageCAN.Data[3] = 0x03;
+	txMessageCAN.Data[4] = 0x04;
+	txMessageCAN.Data[5] = 0x05;
+	txMessageCAN.Data[6] = 0x06;
+	txMessageCAN.Data[7] = 0x07;
 	CAN_TX(&txMessageCAN);
-
-
 }
 
 #ifdef USE_FULL_ASSERT

@@ -39,7 +39,7 @@
 /* Private define ------------------------------------------------------------*/
 #define PinLed GPIO_BSRR_BS_9  // led NORTH))
 
-#define LENGTH_BUFFER 5
+#define LENGTH_BUFFER 32
 
 /* define DEBUG_SEMIHOSTIG to turn it on  */
 

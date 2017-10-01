@@ -52,6 +52,28 @@ typedef struct {
 
 }TXmessageCANstruct;
 
+typedef struct {
+	  uint32_t StdId;
+	  /*!< Specifies the standard identifier.
+	  This parameter must be a number between Min_Data = 0 and Max_Data = 0x7FF. */
+	  uint32_t ExtId;
+	  /*!< Specifies the extended identifier.
+	  This parameter must be a number between Min_Data = 0 and Max_Data = 0x1FFFFFFF. */
+	  uint32_t IDE;
+	  /*!< Specifies the type of identifier for the message that will be transmitted.
+	  This parameter can be a value of CAN_identifier_type */
+	  uint32_t RTR;
+	  /*!< Specifies the type of frame for the message that will be transmitted.
+	  This parameter can be a value of CAN_remote_transmission_request */
+	  uint32_t DLC;
+	  /*!< Specifies the length of the frame that will be transmitted.
+	  This parameter must be a number between Min_Data = 0 and Max_Data = 8. */
+	  uint8_t Data[8];
+	  /*!< Contains the data to be transmitted.
+	  This parameter must be a number between Min_Data = 0 and Max_Data = 0xFF. */
+
+}RXmessageCANstruct;
+
  /* Exported constants --------------------------------------------------------*/
 /* CAN_identifier_type */
 #define CAN_ID_STD                  (0x00000000U)  /*!< Standard Id */
@@ -196,6 +218,10 @@ typedef struct {
 
  void CAN_TX(TXmessageCANstruct* txMessageCAN);
 
+ void CAN_IRQ_RX0_Handler(void);
+ void CAN_IRQ_RX1_Handler(void);
+ void CAN_IRQ_SCE_Handler(void);
+
 /* Private variables ---------------------------------------------------------*/
 
 /* Private constants ---------------------------------------------------------*/
@@ -208,6 +234,28 @@ typedef struct {
 #define IS_BIT_SET(REG, BIT)     ((REG) & (BIT))
 
 #define MODIFY_BIT(REG, MEANING, POS)  (REG) = (((REG) & (~(1 << POS))) | (MEANING << POS))
+
+
+
+#define TX_MAILBOXES_FULL           (3U)
+#define __CAN_GET_FREE_TX_MAILBOX() \
+             (((CAN->TSR) & (1U << 26)) == 0x04000000)? (0U):  \
+             (((CAN->TSR) & (1U << 27)) == 0x08000000)? (1U):  \
+             (((CAN->TSR) & (1U << 28)) == 0x10000000)? (2U):  TX_MAILBOXES_FULL
+
+/*  Enable the specified CAN interrupts. */
+#define __CAN_ENABLE_IT(__INTERRUPT__) ((CAN->IER) |= (__INTERRUPT__))
+
+/*  Disable the specified CAN interrupts. */
+#define __CAN_DISABLE_IT(__INTERRUPT__) ((CAN->IER) &= ~(__INTERRUPT__))
+
+/*  Return the number of pending received messages. */
+#define __CAN_GET_MSG_PENDING(__FIFONUMBER__) (((__FIFONUMBER__) == CAN_BANK_FIFO0)? \
+((uint8_t)(CAN->RF0R & 0x03U)) : ((uint8_t)(CAN->RF1R & 0x03U)))
+
+ /*  Release the specified receive FIFO.  */
+#define __CAN_FIFO_RELEASE(__FIFONUMBER__) (((__FIFONUMBER__) == CAN_BANK_FIFO0)? \
+(CAN->RF0R |= CAN_RF0R_RFOM0) : (CAN->RF1R |= CAN_RF1R_RFOM1))
 
 #ifdef __cplusplus
  } /*  __cplusplus  */

@@ -5,6 +5,7 @@
  *  Author: m.chichikaliv@outlook.com
  */
 /* Includes ------------------------------------------------------------------*/
+#include "main.h"
 #include "stm32f3xx.h"
 #include "stm32f3xx_ll_can.h"
 
@@ -146,7 +147,52 @@ ErrorStatus Can_FilterInit(CanFilterInitStruct* Init) {
 
 void CAN_TX(TXmessageCANstruct* txMessageCAN)
 {
+	uint32_t freeMailbox = (uint32_t)__CAN_GET_FREE_TX_MAILBOX();
 
+	if (freeMailbox != TX_MAILBOXES_FULL)
+	{
+		CAN->sTxMailBox[freeMailbox].TDLR = ((uint32_t)(txMessageCAN->Data[0]<< 0) |
+											 (uint32_t)(txMessageCAN->Data[1]<< 8) |
+			                             	 (uint32_t)(txMessageCAN->Data[2]<<16) |
+											 (uint32_t)(txMessageCAN->Data[3]<<24));
+
+		CAN->sTxMailBox[freeMailbox].TDHR = ((uint32_t)(txMessageCAN->Data[4]<< 0) |
+											 (uint32_t)(txMessageCAN->Data[5]<< 8) |
+											 (uint32_t)(txMessageCAN->Data[6]<<16) |
+											 (uint32_t)(txMessageCAN->Data[7]<<24));
+
+		CAN->sTxMailBox[freeMailbox].TDTR = (0xffffffff & (uint32_t)txMessageCAN->DLC);
+
+
+
+		// set STID or EXID & IDE & RTR
+		if (txMessageCAN->IDE == CAN_ID_STD){
+		CAN->sTxMailBox[freeMailbox].TIR = (0xffffffff & (uint32_t)(txMessageCAN->StdId << 21));
+		} else {
+		CAN->sTxMailBox[freeMailbox].TIR  = (0xffffffff & (uint32_t)(txMessageCAN->ExtId << 3 )); }
+		CAN->sTxMailBox[freeMailbox].TIR |= (uint32_t)(txMessageCAN->IDE | txMessageCAN->RTR);
+		// set TX request bit
+		SET_BIT(CAN->sTxMailBox[freeMailbox].TIR, (1 << 0));
+	} else
+	{
+//		return ; // Don't have empty mail boxes
+		__NOP();
+	}
+
+//	return ; // OK
+}
+
+
+__weak void CAN_IRQ_RX0_Handler(void){
+//
+}
+
+void CAN_IRQ_RX1_Handler(void){
+	__NOP();
+}
+
+__weak void CAN_IRQ_SCE_Handler(void){
+	__NOP();
 }
 
 /*******************************END OF FILE***********************************/

@@ -364,12 +364,12 @@ void GPIO_Init(void) {
 
 
 	/* ------ DMA Init -------------   */
-	LL_DMA_InitTypeDef DMA_InitStruct;
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
 
+	LL_DMA_InitTypeDef DMA_InitStruct;
 	DMA_InitStruct.Direction =              LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
 	DMA_InitStruct.NbData =                 LENGTH_BUFFER;
-	DMA_InitStruct.Mode =                   LL_DMA_MODE_CIRCULAR;
+	DMA_InitStruct.Mode =                   LL_DMA_MODE_NORMAL;
 	DMA_InitStruct.Priority =               LL_DMA_PRIORITY_LOW;
 	DMA_InitStruct.MemoryOrM2MDstIncMode =  LL_DMA_MEMORY_INCREMENT;
 	DMA_InitStruct.PeriphOrM2MSrcIncMode =  LL_DMA_PERIPH_NOINCREMENT;
@@ -439,8 +439,19 @@ void GPIO_Init(void) {
 				/* Debug freeze                              */
 						  (0x1U << CAN_MCR_DBF_Pos)  );
 
+//		Enable some CAN interrupts
+		NVIC_SetPriority(USB_LP_CAN_RX0_IRQn, 0xb);
+		NVIC_EnableIRQ(USB_LP_CAN_RX0_IRQn);
+		NVIC_SetPriority(CAN_SCE_IRQn, 0xb);
+		NVIC_EnableIRQ(CAN_SCE_IRQn);
 
-		ErrorStatus status = Can_Init(&InitStruct);
+		__CAN_ENABLE_IT(CAN_IT_FMP0);
+
+
+		if ((Can_Init(&InitStruct)) != SUCCESS) {
+			Error_Handler();
+		}
+
 
 		CanFilterInitStruct BankInit;
 		BankInit.BankActivation = ENABLE;
@@ -466,7 +477,7 @@ void GPIO_Init(void) {
 		BankInit.FxR1 = (0x000 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1);  // ID
 		BankInit.FxR2 = (0x000 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1); // Mask
 
-		status = Can_FilterInit(&BankInit);
-
-
+		if ((Can_FilterInit(&BankInit)) != SUCCESS) {
+			Error_Handler();
+		}
 }

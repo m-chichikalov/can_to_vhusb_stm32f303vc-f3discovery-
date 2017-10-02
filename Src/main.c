@@ -1,10 +1,3 @@
-/* todo
- *
- * 1 -  receive packets from CAN
- * 1a - init CAN
- * 2 - send them to vhost usb
- */
-
 //#define DEBUG_SEMIHOSTING
 
 /* Includes ------------------------------------------------------------------*/
@@ -112,14 +105,14 @@ static void vTaskSendCanFrameToUsart(void *pvParameters) {
 				rxMessageCAN.Data[2] = (uint8_t)((CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDLR & 0x00ff0000) >> 16);
 				rxMessageCAN.Data[3] = (uint8_t)((CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDLR & 0xff000000) >> 24);
 
-				rxMessageCAN.Data[4] = (uint8_t)(CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDHR & 0x000000ff);
+				rxMessageCAN.Data[4] = (uint8_t) (CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDHR & 0x000000ff);
 				rxMessageCAN.Data[5] = (uint8_t)((CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDHR & 0x0000ff00) >> 8);
 				rxMessageCAN.Data[6] = (uint8_t)((CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDHR & 0x00ff0000) >> 16);
 				rxMessageCAN.Data[7] = (uint8_t)((CAN->sFIFOMailBox[CAN_BANK_FIFO0].RDHR & 0xff000000) >> 24);
 				__CAN_FIFO_RELEASE(CAN_BANK_FIFO0);
 				__CAN_ENABLE_IT(CAN_IT_FMP0);
 //			Format the string using sprintf
-				sprintf(bufDMAtoUSART, "StdID = %lX \r\n", rxMessageCAN.StdId);
+				sprintf(bufDMAtoUSART, "StdID = 0x%lX \r\n", rxMessageCAN.StdId);
 //			Send this string to DMA
 				LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_4);
 				LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_4, LENGTH_BUFFER);

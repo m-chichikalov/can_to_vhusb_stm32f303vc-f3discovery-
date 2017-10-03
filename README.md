@@ -16,7 +16,7 @@ Remove all  CAN filters.
 
 Show all CAN filters.
 
-Необходимо сделать ~~одну~~ другую вещь.
+Hello ~~РџСЂРёРІРµС‚~~ .
 
 	PCB.
 	

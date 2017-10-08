@@ -1,5 +1,6 @@
 #ifndef __MAIN_H
 #define __MAIN_H
+//#define DEBUG_SEMIHOSTING
   /* Includes ------------------------------------------------------------------*/
 //#include "stm32f3xx_ll_adc.h"
 #include "stm32f3xx_ll_bus.h"
@@ -29,7 +30,9 @@
 //#include "stm32f3xx_ll_wwdg.h"
 #include "stm32f3xx.h"
 
-#include "UART_functionality.h"
+#include "microrl.h"
+#include "cicle_buffer.h"
+#include "CLI_Functionality.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -38,8 +41,6 @@
 
 /* Private define ------------------------------------------------------------*/
 #define PinLed GPIO_BSRR_BS_9  // led NORTH))
-
-#define LENGTH_BUFFER 32
 
 /* define DEBUG_SEMIHOSTIG to turn it on  */
 

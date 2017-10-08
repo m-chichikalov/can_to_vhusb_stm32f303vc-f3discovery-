@@ -1,19 +1,23 @@
-//#define DEBUG_SEMIHOSTING
-
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 //#include <stdio.h>
 
 /* Private variables ---------------------------------------------------------*/
+// create microrl object and pointer on it
+microrl_t rl;
+microrl_t * prl = &rl;
 
-/*--- buffer for DMA USART1-TX ----------*/
-char bufDMAtoUSART[50];
+cicle_buffer_t c_b;
+cicle_buffer_t* pc_b = &c_b;
+
+//char bufDMAtoUSART[LENGTH_BUFFER];
 
 xTaskHandle xTask1Handle, xTaskSendCanFrameToUsartHandle;
 
 /* Private variables ---------------------------------------------------------*/
 const char *pcTextForTask1 = "Task 1 is running\n";
 const char *pcTextForTask2 = "Task 2 is running\n";
+
 
 /* Private function prototypes -----------------------------------------------*/
 extern void Init(void);
@@ -25,6 +29,7 @@ extern void initialise_monitor_handles(void); /* prototype */
 /* Private function prototypes -----------------------------------------------*/
 void vTaskToggleLed(void *pvParameters);
 static void vTaskSendCanFrameToUsart(void *pvParameters);
+//static void xTaskCommandReceived(void *pvParameters);
 static void TX_CAN_Frame(TimerHandle_t xTimer);
 
 int main(void) {
@@ -32,18 +37,24 @@ int main(void) {
 
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	/* System interrupt init*/
-	Init();
+ 	Init();
 
 	/* Configure the system clock */
 	SystemClock_Config();
 
 	/* Turn on the semihosting */
-//	initialise_monitor_handles();
-//	printf("hello world!\r\n");
+	initialise_monitor_handles();
+	printf("hello world!\r\n");
 
 	/* Initialize all configured peripherals */
 	GPIO_Init();
 
+	/* Initialize CLI interface */
+	microrl_init(prl, print);
+	// Set callback for execute
+	microrl_set_execute_callback (prl, execute);
+
+	c_b_init(pc_b);
 
 #if ( configUSE_TRACE_FACILITY == 1 )
 	vTraceEnable(TRC_START);
@@ -55,11 +66,17 @@ int main(void) {
 			    "Task_2", 512,
 				(void*)pcTextForTask2, 1, &xTaskSendCanFrameToUsartHandle);
 
+//	xTaskCreate(xTaskCommandReceived,
+//			    "Task_2", 512,
+//				(void*)pcTextForTask2, 2, &xTaskCommandReceivedHandle);
+
 	// create timer which will send one frame every 500 ms
     // just for testing
 	TimerHandle_t txTimer = xTimerCreate("TXcan", 1000, pdTRUE, 0, TX_CAN_Frame);
 	xTimerStart(txTimer, 0);
 	vTaskStartScheduler();
+
+//	__enable_irq();
 
 	/* Infinite loop */
 	while (1) {}
@@ -78,6 +95,7 @@ void _Error_Handler(char * file, int line) {
 void vTaskToggleLed(void *pvParameters) {
 	for (;;) {
 		LL_GPIO_TogglePin(GPIOE, PinLed);
+
 		vTaskDelay(500);
 	}
 }
@@ -112,15 +130,16 @@ static void vTaskSendCanFrameToUsart(void *pvParameters) {
 				__CAN_FIFO_RELEASE(CAN_BANK_FIFO0);
 				__CAN_ENABLE_IT(CAN_IT_FMP0);
 //			Format the string using sprintf
-				sprintf(bufDMAtoUSART, "StdID = 0x%lX \r\n", rxMessageCAN.StdId);
-//			Send this string to DMA
-				LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_4);
-				LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_4, LENGTH_BUFFER);
-				LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_4);
+//			sprintf(bufDMAtoUSART, "StdID->0x%lX", rxMessageCAN.StdId);
+//			Send this string to Terminal
+//				print(pcTextForTask2);
+//				print ("UseTAB key for completion\n\rCommand:\n\r\0");
 			}
 		}
 	}
 }
+
+
 
 void CAN_IRQ_RX0_Handler(void){
 //	Proceed reception of new message
@@ -135,6 +154,24 @@ void CAN_IRQ_RX0_Handler(void){
 	}
 }
 
+void USART1_IRQ_Handler(void) {
+		if (LL_USART_IsActiveFlag_IDLE(USART1) & LL_USART_IsEnabledIT_IDLE(USART1)){
+			// if I decide to put the whole command I should use IDLE interrupt routine
+		}
+		else if (LL_USART_IsActiveFlag_RXNE(USART1)  & LL_USART_IsEnabledIT_RXNE(USART1)){
+			microrl_insert_char (prl, LL_USART_ReceiveData8(USART1));
+		}
+		else if (LL_USART_IsActiveFlag_TXE(USART1) & LL_USART_IsEnabledIT_TXE(USART1)){
+			if ((c_b_get_p_actual(pc_b)) != (c_b_get_p_used(pc_b)))
+				LL_USART_TransmitData8(USART1, c_b_get_from(pc_b));
+			else
+//				LL_USART_RequestTxDataFlush(USART1);
+				LL_USART_DisableIT_TXE(USART1);
+		}
+}
+
+
+// Temporary SoftTimer to throw messages...
 static void TX_CAN_Frame(TimerHandle_t xTimer)
 {
 	TXmessageCANstruct txMessageCAN;

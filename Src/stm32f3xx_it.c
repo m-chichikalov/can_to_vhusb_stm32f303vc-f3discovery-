@@ -5,7 +5,7 @@
 /* External variables --------------------------------------------------------*/
 //extern PCD_HandleTypeDef hpcd_USB_FS;
 //extern CAN_HandleTypeDef hcan;
-extern 	void __USART1_Handler(void);
+extern 	void USART1_IRQ_Handler(void);
 extern  void CAN_IRQ_RX0_Handler(void);
 extern  void CAN_IRQ_RX1_Handler(void);
 extern  void CAN_IRQ_SCE_Handler(void);
@@ -64,14 +64,17 @@ void DebugMon_Handler(void)
 
 void USART1_IRQHandler(void)
 {
-	__USART1_Handler();
+	USART1_IRQ_Handler();
 }
 
 void DMA1_Channel4_IRQHandler(void)
 {
-
 		__NOP();
+}
 
+void DMA1_Channel5_IRQHandler(void)
+{
+		__NOP();
 }
 
 void USB_LP_IRQHandler(void)

@@ -336,7 +336,7 @@ void GPIO_Init(void) {
 		Error_Handler();
 	}
 
-	USART_InitStruct.BaudRate =            115200;
+	USART_InitStruct.BaudRate =            921600;
 	USART_InitStruct.DataWidth =           LL_USART_DATAWIDTH_8B;
 	USART_InitStruct.StopBits =            LL_USART_STOPBITS_1;
 	USART_InitStruct.Parity =              LL_USART_PARITY_NONE;
@@ -352,47 +352,66 @@ void GPIO_Init(void) {
 
 	LL_USART_ConfigAsyncMode(USART1);
 
-	LL_USART_EnableDMAReq_TX(USART1);
+//	LL_USART_EnableDMAReq_RX(USART1);
+//	LL_USART_EnableDMAReq_TX(USART1);
 	LL_USART_ClearFlag_TC(USART1);
 
 	LL_USART_Enable(USART1);
 
-//	NVIC_SetPriority(USART1_IRQn,
-//			NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
-//	NVIC_EnableIRQ(USART1_IRQn);
+/* --------------------- DMA Init ----------------------------   */
+//	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
+//
+//	LL_DMA_InitTypeDef DMA_InitStruct;
+//
+//	// config buffer->DMA->USART
+//	DMA_InitStruct.Direction =              LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+//	DMA_InitStruct.NbData =                 LENGTH_BUFFER;
+//	DMA_InitStruct.Mode =                   LL_DMA_MODE_NORMAL;
+//	DMA_InitStruct.Priority =               LL_DMA_PRIORITY_LOW;
+//	DMA_InitStruct.MemoryOrM2MDstIncMode =  LL_DMA_MEMORY_INCREMENT;
+//	DMA_InitStruct.PeriphOrM2MSrcIncMode =  LL_DMA_PERIPH_NOINCREMENT;
+//	DMA_InitStruct.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
+//	DMA_InitStruct.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_HALFWORD;
+//	DMA_InitStruct.MemoryOrM2MDstAddress =  (uint32_t)(&bufDMAtoUSART[0]);
+//	DMA_InitStruct.PeriphOrM2MSrcAddress =  (uint32_t)(&(USART1->TDR));
+//	if ((LL_DMA_Init(DMA1, LL_DMA_CHANNEL_4, &DMA_InitStruct)) != SUCCESS) {
+//		Error_Handler();
+//	}
+	// config USART->DMA->buffer
+//	DMA_InitStruct.Direction =              LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
+//	DMA_InitStruct.NbData =                 LENGTH_BUFFER/2;
+//	DMA_InitStruct.Mode =                   LL_DMA_MODE_NORMAL;
+//	DMA_InitStruct.Priority =               LL_DMA_PRIORITY_LOW;
+//	DMA_InitStruct.MemoryOrM2MDstIncMode =  LL_DMA_MEMORY_INCREMENT;
+//	DMA_InitStruct.PeriphOrM2MSrcIncMode =  LL_DMA_PERIPH_NOINCREMENT;
+//	DMA_InitStruct.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
+//	DMA_InitStruct.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_HALFWORD;
+//	DMA_InitStruct.MemoryOrM2MDstAddress =  (uint32_t)(&bufDMAtoUSART[15]);
+//	DMA_InitStruct.PeriphOrM2MSrcAddress =  (uint32_t)(&(USART1->RDR));
+//	if ((LL_DMA_Init(DMA1, LL_DMA_CHANNEL_5, &DMA_InitStruct)) != SUCCESS) {
+//		Error_Handler();
+//	}
 
-
-
-	/* ------ DMA Init -------------   */
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
-
-	LL_DMA_InitTypeDef DMA_InitStruct;
-	DMA_InitStruct.Direction =              LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
-	DMA_InitStruct.NbData =                 LENGTH_BUFFER;
-	DMA_InitStruct.Mode =                   LL_DMA_MODE_NORMAL;
-	DMA_InitStruct.Priority =               LL_DMA_PRIORITY_LOW;
-	DMA_InitStruct.MemoryOrM2MDstIncMode =  LL_DMA_MEMORY_INCREMENT;
-	DMA_InitStruct.PeriphOrM2MSrcIncMode =  LL_DMA_PERIPH_NOINCREMENT;
-	DMA_InitStruct.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
-	DMA_InitStruct.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_HALFWORD;
-	DMA_InitStruct.MemoryOrM2MDstAddress =  (uint32_t)(&bufDMAtoUSART[0]);
-	DMA_InitStruct.PeriphOrM2MSrcAddress =  (uint32_t)(&(USART1->TDR));
-	if ((LL_DMA_Init(DMA1, LL_DMA_CHANNEL_4, &DMA_InitStruct)) != SUCCESS) {
-		Error_Handler();
-	}
-
-	LL_DMA_DisableIT_HT(DMA1, LL_DMA_CHANNEL_4);
-	LL_DMA_DisableIT_TC(DMA1, LL_DMA_CHANNEL_4);
-	LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_4);
+//	LL_DMA_DisableIT_HT(DMA1, LL_DMA_CHANNEL_4);
+//	LL_DMA_DisableIT_TC(DMA1, LL_DMA_CHANNEL_4);
+//	LL_DMA_EnableIT_TE (DMA1, LL_DMA_CHANNEL_4);
 //	LL_DMA_DisableIT_TE(DMA1, LL_DMA_CHANNEL_4);
 
-	NVIC_SetPriority(DMA1_Channel4_IRQn,
-			NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
-	NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+//	LL_DMA_DisableIT_HT(DMA1, LL_DMA_CHANNEL_5);
+//	LL_DMA_DisableIT_TC(DMA1, LL_DMA_CHANNEL_5);
+//	LL_DMA_EnableIT_TE (DMA1, LL_DMA_CHANNEL_5);
+////	LL_DMA_DisableIT_TE(DMA1, LL_DMA_CHANNEL_5);
 
-	LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_4);
+//	NVIC_SetPriority(DMA1_Channel4_IRQn,0xf);
+//	NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+//
+//	NVIC_SetPriority(DMA1_Channel5_IRQn,0xf);
+//	NVIC_EnableIRQ(DMA1_Channel5_IRQn);
 
-/*---------Init CAN pins--------------------*/
+//	LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_4);
+//	LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_5);
+
+/*------------------------Init CAN pins---------------------------*/
 		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_CAN);
 		/**CAN GPIO Configuration
 		 PA11     ------> CAN_RX
@@ -480,4 +499,16 @@ void GPIO_Init(void) {
 		if ((Can_FilterInit(&BankInit)) != SUCCESS) {
 			Error_Handler();
 		}
+
+
+		NVIC_SetPriority(USART1_IRQn, 0xA);
+		NVIC_EnableIRQ(USART1_IRQn);
+
+		while (LL_USART_IsActiveFlag_IDLE(USART1)) {
+		LL_USART_ClearFlag_IDLE(USART1);
+		}
+//		LL_USART_EnableIT_IDLE(USART1);
+		LL_USART_EnableIT_TXE(USART1);
+		LL_USART_EnableIT_RXNE(USART1);
+
 }

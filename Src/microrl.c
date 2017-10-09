@@ -13,6 +13,11 @@ BUGS and TODO:
 #include <stdio.h>
 #endif
 
+#ifdef _USE_FREE_RTOS_NOTIFICATION
+#include "FreeRTOS.h"
+#include "task.h"
+#endif
+
 //#define DBG(...) fprintf(stderr, "\033[33m");fprintf(stderr,__VA_ARGS__);fprintf(stderr,"\033[0m");
 
 char * prompt_default = _PROMPT_DEFAULT;
@@ -225,7 +230,8 @@ inline static void terminal_backspace (microrl_t * pThis)
 //*****************************************************************************
 inline static void terminal_newline (microrl_t * pThis)
 {
-	pThis->print (ENDL);
+//	pThis->print (ENDL);
+	pThis->print ("\r\n");
 }
 
 #ifndef _USE_LIBC_STDIO
@@ -346,10 +352,14 @@ void microrl_set_complete_callback (microrl_t * pThis, char ** (*get_completion)
 }
 
 //*****************************************************************************
+#ifdef _USE_FREE_RTOS_NOTIFICATION
+void microrl_set_execute_callback (microrl_t * pThis, void* execute_handle)
+{	pThis->execute = execute_handle;	}
+#else
 void microrl_set_execute_callback (microrl_t * pThis, int (*execute)(int, const char* const*))
-{
-	pThis->execute = execute;
-}
+{	pThis->execute = execute;	}
+#endif
+
 #ifdef _USE_CTLR_C
 //*****************************************************************************
 void microrl_set_sigint_callback (microrl_t * pThis, void (*sigintf)(void))
@@ -532,32 +542,44 @@ static void microrl_get_complite (microrl_t * pThis)
 }
 #endif
 
+
+//*****************************************************************************
+int microrl_get_argc(microrl_t * pThis){
+	return pThis->status;
+}
+//*****************************************************************************
+const char * const * microrl_get_argv(microrl_t * pThis){
+	return pThis->tkn_arr;
+}
+
 //*****************************************************************************
 void new_line_handler(microrl_t * pThis){
-	char const * tkn_arr [_COMMAND_TOKEN_NMB];
-	int status;
-
+	print("\033[0m");
 	terminal_newline (pThis);
 #ifdef _USE_HISTORY
 	if (pThis->cmdlen > 0)
 		hist_save_line (&pThis->ring_hist, pThis->cmdline, pThis->cmdlen);
 #endif
-	status = split (pThis, pThis->cmdlen, tkn_arr);
-	if (status == -1){
-		//          pThis->print ("ERROR: Max token amount exseed\n");
+	pThis->status = split (pThis, pThis->cmdlen, pThis->tkn_arr);
+	if (pThis->status == -1){
 		pThis->print ("ERROR:too many tokens");
 		pThis->print (ENDL);
 	}
 #ifdef _USE_FREE_RTOS_NOTIFICATION
-
+	BaseType_t xHigherPriorityTaskWoken;
+	if ((pThis->status > 0) && (pThis->execute != NULL)){
+		xHigherPriorityTaskWoken = pdFALSE;
+		vTaskNotifyGiveFromISR(pThis->execute, &xHigherPriorityTaskWoken);
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+	}
 #else
 	if ((status > 0) && (pThis->execute != NULL))
-		pThis->execute (status, tkn_arr);
-#endif
+		pThis->execute (pThis->status, pThis->tkn_arr);
 	print_prompt (pThis);
+#endif
 	pThis->cmdlen = 0;
 	pThis->cursor = 0;
-	memset(pThis->cmdline, 0, _COMMAND_LINE_LEN);
+//	memset(pThis->cmdline, 0, _COMMAND_LINE_LEN);
 #ifdef _USE_HISTORY
 	pThis->ring_hist.cur = 0;
 #endif
@@ -577,6 +599,10 @@ void microrl_insert_char (microrl_t * pThis, int ch)
 			//-----------------------------------------------------
 #ifdef _ENDL_CR
 			case KEY_CR:
+				if (pThis->cmdlen == 0){
+					terminal_newline (pThis);
+					print_prompt (pThis);
+					break;}
 				new_line_handler(pThis);
 			break;
 			case KEY_LF:

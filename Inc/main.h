@@ -45,12 +45,12 @@
 /* define DEBUG_SEMIHOSTIG to turn it on  */
 
 
-#if !defined  (DEBUG_SEMIHOSTING)
-	#define printf(__NN__) ((void)0U)
-	#define initialise_monitor_handles __NOP
-#else
-	#include <stdio.h>
-#endif /* USE_HAL_DRIVER */
+//#if !defined  (DEBUG_SEMIHOSTING)
+//	#define printf(__NN__) ((void)0U)
+//	#define initialise_monitor_handles __NOP
+//#else
+//	#include <stdio.h>
+//#endif /* USE_HAL_DRIVER */
 
 
 #ifndef NVIC_PRIORITYGROUP_0

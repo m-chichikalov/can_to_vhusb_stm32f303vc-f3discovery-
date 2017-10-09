@@ -18,38 +18,34 @@
 
 //available  commands
 char * keyworld [] = {_CMD_HELP, _CMD_CLEAR, _CMD_SET, _CMD_CLR};
-// 'set/clear' command argements
+// 'set/clear' command arguments
 char * set_clear_key [] = {_SCMD_PB, _SCMD_PD};
 
 // array for comletion
 char * compl_world [_NUM_OF_CMD + 1];
 
 extern cicle_buffer_t* pc_b;
+//extern      microrl_t* prl ;
+extern char * prompt_default;
+
 
 
 //*****************************************************************************
-//recursive print (get rid of overwriting)
 void print (const char * str)
-{
-	const char * temp_str = c_b_put_into(pc_b, str);
-//	if (temp_str != 0x0)
-//		print(temp_str);
+{ //put string into the buffer
+	c_b_put_into(pc_b, str);
+//	enable TXE interrupt to send these data
 	LL_USART_EnableIT_TXE(USART1);
 }
 
-int execute (int argc, const char * const * argv) {
+void execute (int argc, const char * const * argv) {
 	int i = 0;
-	// just iterate through argv word and compare it with your commands
 	while (i < argc) {
-		if (strcmp (argv[i], _CMD_HELP) == 0) {
+		if (strcmp (argv[i], _CMD_HELP) == 0) { // help
 			print ("microrl v");
 			print (MICRORL_LIB_VER);
 			print("\n\r");
-			print ("Use TAB key for completion\n\rCommand:\n\r");
-			print ("\tclear               - clear screen\n\r");
-			print ("\tset_port port pin   - set 1 port[pin] value, support only 'port_b' and 'port_d'\n\r");
-			print ("\tclear_port pin      - clear 1 port[pin] value, support only 'port_b' and 'port_d'\n\r");
-		} else if (strcmp (argv[i], _CMD_CLEAR) == 0) {
+		} else if (strcmp (argv[i], _CMD_CLEAR) == 0) { // clear
 			print ("\033[2J");    // ESC seq for clear entire screen
 			print ("\033[H");     // ESC seq for move cursor at left-top corner
 		} else if ((strcmp (argv[i], _CMD_SET) == 0) || (strcmp (argv[i], _CMD_CLR) == 0)) {
@@ -58,28 +54,28 @@ int execute (int argc, const char * const * argv) {
 				unsigned char * port = NULL;
 				int pin = 0;
 				if (strcmp (argv[i], _SCMD_PD) == 0) {
-//						port = (unsigned char *)&PORTD;
+	//						port = (unsigned char *)&PORTD;
 				} else if (strcmp (argv[i], _SCMD_PB) == 0) {
-//						port = (unsigned char *)&PORTB;
+	//						port = (unsigned char *)&PORTB;
 				} else {
 					print ("only '");
 					print (_SCMD_PB);
 					print ("' and '");
 					print (_SCMD_PD);
 					print ("' support\n\r");
-					return 1;
+					break;
 				}
 				if (++i < argc) {
 					pin = atoi (argv[i]);
-//						set_port_val (port, pin, val);
-					return 0;
+	//						set_port_val (port, pin, val);
+					break;
 				} else {
 					print ("specify pin number, use Tab\n\r");
-					return 1;
+					break;
 				}
 			} else {
 					print ("specify port, use Tab\n\r");
-				return 1;
+					break;
 			}
 		} else {
 			print ("command: '");
@@ -88,5 +84,6 @@ int execute (int argc, const char * const * argv) {
 		}
 		i++;
 	}
-	return 0;
+//	print("\033[0m");
+	print(prompt_default);
 }

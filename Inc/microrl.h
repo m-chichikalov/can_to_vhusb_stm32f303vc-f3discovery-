@@ -79,7 +79,13 @@ typedef struct {
 	char cmdline [_COMMAND_LINE_LEN];  // cmdline buffer
 	int cmdlen;                        // last position in command line
 	int cursor;                        // input cursor
+	char const * tkn_arr [_COMMAND_TOKEN_NMB];
+	int status;
+#ifdef _USE_FREE_RTOS_NOTIFICATION
+	void * execute;            // TaskHandle
+#else
 	int (*execute) (int argc, const char * const * argv );            // ptr to 'execute' callback
+#endif
 	char ** (*get_completion) (int argc, const char * const * argv ); // ptr to 'completion' callback
 	void (*print) (const char *);                                     // ptr to 'print' callback
 #ifdef _USE_CTLR_C
@@ -104,7 +110,11 @@ void microrl_set_complete_callback (microrl_t * pThis, char ** (*get_completion)
 
 // pointer to callback func, that called when user press 'Enter'
 // execute func param: argc - argument count, argv - pointer array to token string
+#ifdef _USE_FREE_RTOS_NOTIFICATION
+void microrl_set_execute_callback (microrl_t * pThis, void* execute_handle);
+#else
 void microrl_set_execute_callback (microrl_t * pThis, int (*execute)(int, const char* const*));
+#endif
 
 // set callback for Ctrl+C terminal signal
 #ifdef _USE_CTLR_C
@@ -113,5 +123,10 @@ void microrl_set_sigint_callback (microrl_t * pThis, void (*sigintf)(void));
 
 // insert char to cmdline (for example call in usart RX interrupt)
 void microrl_insert_char (microrl_t * pThis, int ch);
+
+//*****************************************************************************
+int microrl_get_argc(microrl_t * pThis);
+//*****************************************************************************
+const char * const * microrl_get_argv(microrl_t * pThis);
 
 #endif

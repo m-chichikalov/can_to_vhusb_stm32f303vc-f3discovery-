@@ -1,6 +1,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-//#include <stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* Private variables ---------------------------------------------------------*/
 // create microrl object and pointer on it
@@ -10,21 +12,24 @@ microrl_t * prl = &rl;
 cicle_buffer_t c_b;
 cicle_buffer_t* pc_b = &c_b;
 
+char * bufDMAtoUSART[30];
+
 //char bufDMAtoUSART[LENGTH_BUFFER];
 
-xTaskHandle xTask1Handle, xTaskSendCanFrameToUsartHandle;
+xTaskHandle xTask1Handle;
+xTaskHandle xTaskSendCanFrameToUsartHandle;
+xTaskHandle xTaskCLIHandle;
 
 /* Private variables ---------------------------------------------------------*/
 const char *pcTextForTask1 = "Task 1 is running\n";
-const char *pcTextForTask2 = "Task 2 is running\n";
-
 
 /* Private function prototypes -----------------------------------------------*/
 extern void Init(void);
 extern void SystemClock_Config(void);
 extern void GPIO_Init(void);
 
-extern void initialise_monitor_handles(void); /* prototype */
+void vExecute (void *pvParameters);
+extern void execute (int argc, const char * const * argv);
 
 /* Private function prototypes -----------------------------------------------*/
 void vTaskToggleLed(void *pvParameters);
@@ -34,26 +39,17 @@ static void TX_CAN_Frame(TimerHandle_t xTimer);
 
 int main(void) {
 	/* MCU Configuration----------------------------------------------------------*/
-
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	/* System interrupt init*/
- 	Init();
+
+	Init();
 
 	/* Configure the system clock */
 	SystemClock_Config();
 
-	/* Turn on the semihosting */
-	initialise_monitor_handles();
-	printf("hello world!\r\n");
-
 	/* Initialize all configured peripherals */
 	GPIO_Init();
-
-	/* Initialize CLI interface */
-	microrl_init(prl, print);
-	// Set callback for execute
-	microrl_set_execute_callback (prl, execute);
-
+	/* Initialize circle buffer  */
 	c_b_init(pc_b);
 
 #if ( configUSE_TRACE_FACILITY == 1 )
@@ -61,22 +57,36 @@ int main(void) {
 	vTraceEnable(TRC_INIT);
 #endif
 
-	xTaskCreate(vTaskToggleLed, "ToggelPinLed", 256, (void*) pcTextForTask1, 0, &xTask1Handle);
-	xTaskCreate(vTaskSendCanFrameToUsart,
-			    "Task_2", 512,
-				(void*)pcTextForTask2, 1, &xTaskSendCanFrameToUsartHandle);
+	BaseType_t xReturn = 0;
+	xReturn = xTaskCreate(vTaskToggleLed,
+			    "ToggelPinLed", 256,
+				NULL, 1, &xTask1Handle);
+	xReturn += xTaskCreate(vTaskSendCanFrameToUsart,
+			    "Task_2", 256,
+				NULL, 1, &xTaskSendCanFrameToUsartHandle);
 
-//	xTaskCreate(xTaskCommandReceived,
-//			    "Task_2", 512,
-//				(void*)pcTextForTask2, 2, &xTaskCommandReceivedHandle);
+	xReturn += xTaskCreate(vExecute,
+			    "CLI_", 256,
+				NULL, 1, &xTaskCLIHandle);
+
 
 	// create timer which will send one frame every 500 ms
     // just for testing
-	TimerHandle_t txTimer = xTimerCreate("TXcan", 1000, pdTRUE, 0, TX_CAN_Frame);
-	xTimerStart(txTimer, 0);
-	vTaskStartScheduler();
+	TimerHandle_t txTimerHandler = xTimerCreate("TXcan", 1000, pdTRUE, 0, TX_CAN_Frame);
+	xReturn += xTimerStart(txTimerHandler, 0);
 
-//	__enable_irq();
+	/* Initialize CLI interface */
+	microrl_init(prl, print);
+	// Set callback for execute
+	microrl_set_execute_callback (prl, xTaskCLIHandle);
+
+//	Check that all tasks are created
+	if (xReturn != (BaseType_t)
+				4
+//	if creation is failed we will stuck here
+							  ){ for(;;){} }
+
+	vTaskStartScheduler();
 
 	/* Infinite loop */
 	while (1) {}
@@ -95,8 +105,18 @@ void _Error_Handler(char * file, int line) {
 void vTaskToggleLed(void *pvParameters) {
 	for (;;) {
 		LL_GPIO_TogglePin(GPIOE, PinLed);
+        vTaskDelay(250);
+	}
+}
 
-		vTaskDelay(500);
+void vExecute (void *pvParameters) {
+	for(;;){
+		uint32_t pendingCommand = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+		if (pendingCommand != 0) {
+			int argc = microrl_get_argc(prl);
+			const char * const * argv = microrl_get_argv(prl);
+			execute(argc, argv);
+		}
 	}
 }
 
@@ -130,9 +150,9 @@ static void vTaskSendCanFrameToUsart(void *pvParameters) {
 				__CAN_FIFO_RELEASE(CAN_BANK_FIFO0);
 				__CAN_ENABLE_IT(CAN_IT_FMP0);
 //			Format the string using sprintf
-//			sprintf(bufDMAtoUSART, "StdID->0x%lX", rxMessageCAN.StdId);
+//			sprintf(bufDMAtoUSART, "StdID->0x%lX \r\n", rxMessageCAN.StdId);
 //			Send this string to Terminal
-//				print(pcTextForTask2);
+//				print(bufDMAtoUSART);
 //				print ("UseTAB key for completion\n\rCommand:\n\r\0");
 			}
 		}
@@ -156,7 +176,7 @@ void CAN_IRQ_RX0_Handler(void){
 
 void USART1_IRQ_Handler(void) {
 		if (LL_USART_IsActiveFlag_IDLE(USART1) & LL_USART_IsEnabledIT_IDLE(USART1)){
-			// if I decide to put the whole command I should use IDLE interrupt routine
+			// if I decide to put the whole command I should use IDLE interrupt routine here
 		}
 		else if (LL_USART_IsActiveFlag_RXNE(USART1)  & LL_USART_IsEnabledIT_RXNE(USART1)){
 			microrl_insert_char (prl, LL_USART_ReceiveData8(USART1));
@@ -165,11 +185,9 @@ void USART1_IRQ_Handler(void) {
 			if ((c_b_get_p_actual(pc_b)) != (c_b_get_p_used(pc_b)))
 				LL_USART_TransmitData8(USART1, c_b_get_from(pc_b));
 			else
-//				LL_USART_RequestTxDataFlush(USART1);
 				LL_USART_DisableIT_TXE(USART1);
 		}
 }
-
 
 // Temporary SoftTimer to throw messages...
 static void TX_CAN_Frame(TimerHandle_t xTimer)

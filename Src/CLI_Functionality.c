@@ -17,6 +17,11 @@
 	#define _SCMD_CAN_INIT     "-init"
 	#define _SCMD_CAN_STOP     "-stop"
 	#define _SCMD_CAN_         "-"
+#define _CMD_FILTER       "filter"
+// arguments for can
+	#define _SCMD_FILTER_ALL   "-all"
+	#define _SCMD_FILTER_ON    "on"
+	#define _SCMD_FILTER_OFF   "off"
 
 #define _NUM_OF_CMD 4
 #define _NUM_OF_SETCLEAR_SCMD 2

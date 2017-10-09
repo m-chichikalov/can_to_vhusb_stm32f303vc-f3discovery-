@@ -5,13 +5,18 @@
 #include <stdlib.h>
 
 // definition commands word
-#define _CMD_HELP   "help"
-#define _CMD_CLEAR  "clear"
-#define _CMD_CLR    "clear_port"
-#define _CMD_SET    "set_port"
+#define _CMD_HELP      "help"
+#define _CMD_CLEAR     "clear"
+#define _CMD_CLR       "clear_port"
+#define _CMD_SET       "set_port"
 // arguments for set/clear
-	#define _SCMD_PB  "port_b"
-	#define _SCMD_PD  "port_d"
+	#define _SCMD_PB           "port_b"
+	#define _SCMD_PD           "port_d"
+#define _CMD_CAN       "can"
+// arguments for can
+	#define _SCMD_CAN_INIT     "-init"
+	#define _SCMD_CAN_STOP     "-stop"
+	#define _SCMD_CAN_         "-"
 
 #define _NUM_OF_CMD 4
 #define _NUM_OF_SETCLEAR_SCMD 2
@@ -43,7 +48,7 @@ void execute (int argc, const char * const * argv) {
 	while (i < argc) {
 		if (strcmp (argv[i], _CMD_HELP) == 0) { // help
 			print ("microrl v");
-			print (MICRORL_LIB_VER);
+			print (_VER);
 			print("\n\r");
 		} else if (strcmp (argv[i], _CMD_CLEAR) == 0) { // clear
 			print ("\033[2J");    // ESC seq for clear entire screen
@@ -77,6 +82,7 @@ void execute (int argc, const char * const * argv) {
 					print ("specify port, use Tab\n\r");
 					break;
 			}
+		} else if (strcmp (argv[i], _CMD_CAN) == 0){ //
 		} else {
 			print ("command: '");
 			print ((char*)argv[i]);
@@ -84,6 +90,5 @@ void execute (int argc, const char * const * argv) {
 		}
 		i++;
 	}
-//	print("\033[0m");
 	print(prompt_default);
 }

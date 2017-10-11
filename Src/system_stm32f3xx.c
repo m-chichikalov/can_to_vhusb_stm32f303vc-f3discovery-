@@ -491,8 +491,28 @@ void GPIO_Init(void) {
  *    specified in the corresponding identifier register of the filter.
  *
  */
-		BankInit.FxR1 = (0x000 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1);  // ID
-		BankInit.FxR2 = (0x000 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1); // Mask
+		BankInit.FxR1 = (0x100 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1);  // ID
+		BankInit.FxR2 = (0x700 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1); // Mask
+
+		if ((Can_FilterInit(&BankInit)) != SUCCESS) {
+			Error_Handler();
+		}
+
+		BankInit.FifoAssignment = CAN_BANK_FIFO1;
+		BankInit.FiltersBankNumber = 5;
+		BankInit.FxR1 = (0x100 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1);  // ID
+		BankInit.FxR2 = (0x700 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1); // Mask
+
+		if ((Can_FilterInit(&BankInit)) != SUCCESS) {
+			Error_Handler();
+		}
+
+		BankInit.BankMode = CAN_BANKMODE_IDLIST;
+		BankInit.BankScale = CAN_BANKSCALE_16BIT;
+		BankInit.FifoAssignment = CAN_BANK_FIFO0;
+		BankInit.FiltersBankNumber = 9;
+		BankInit.FxR1 = (0x100 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1);  // ID
+		BankInit.FxR2 = (0x700 << 21) | (0x00000 << 3) | (0x0 << 2) | (0x0 << 1); // Mask
 
 		if ((Can_FilterInit(&BankInit)) != SUCCESS) {
 			Error_Handler();

@@ -10,10 +10,6 @@
 #define LEN_BUFFER               256
 //
 //
-//
-//
-//
-//
 //*****************************************************************************
 
 //typedef enum
@@ -30,16 +26,9 @@ typedef struct {
 
 
 int c_b_init(cicle_buffer_t* pThis);
-char* c_b_put_into(cicle_buffer_t* pThis, const char* str);
+void c_b_put_into(cicle_buffer_t* pThis, const char* str);
 char c_b_get_from(cicle_buffer_t* pThis);
 char* c_b_get_p_actual(cicle_buffer_t* pThis);
 char* c_b_get_p_used(cicle_buffer_t* pThis);
-void c_b_set_p_actual(cicle_buffer_t* pThis, char* new_pointer);
-void c_b_set_p_used(cicle_buffer_t* pThis, char* new_pointer);
-
-
-//*****************************************************************************
-// static functions
-static void c_b_modify_buffer(cicle_buffer_t* pThis, char val);
 
 #endif /* CICLE_BUFFER_H_ */

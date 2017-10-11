@@ -40,7 +40,7 @@ static void TX_CAN_Frame(TimerHandle_t xTimer);
 int main(void) {
 	/* MCU Configuration----------------------------------------------------------*/
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-	/* System interrupt init*/
+	/* System interrupt initialization*/
 
 	Init();
 

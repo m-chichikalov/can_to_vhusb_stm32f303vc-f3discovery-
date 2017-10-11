@@ -52,7 +52,7 @@
 //	#include <stdio.h>
 //#endif /* USE_HAL_DRIVER */
 
-#define _VER                         "1.01v"
+#define _VER                         "1.01"
 
 #ifndef NVIC_PRIORITYGROUP_0
 #define NVIC_PRIORITYGROUP_0         ((uint32_t)0x00000007) /*!< 0 bit  for pre-emption priority,

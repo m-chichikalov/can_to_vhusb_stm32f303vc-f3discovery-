@@ -213,6 +213,8 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
  ErrorStatus Can_Init(CanInitStruct* Init);
+ ErrorStatus Can_Init_Mode(void);
+ ErrorStatus Can_Normal_Mode(void);
  ErrorStatus Can_DeInit(void);
  ErrorStatus Can_FilterInit(CanFilterInitStruct* Init);
 

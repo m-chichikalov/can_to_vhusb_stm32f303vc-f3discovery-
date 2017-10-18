@@ -16,7 +16,7 @@
 /* Private function prototypes -----------------------------------------------*/
 /* Exported functions ---------------------------------------------------------*/
 
-ErrorStatus Can_Init(CanInitStruct* Init) {
+ErrorStatus Can_Init_Mode(void){
 	uint32_t count = 0;
 	/* Exit from sleep mode */
 	CLEAR_BIT(CAN->MCR, CAN_MCR_SLEEP);
@@ -32,6 +32,29 @@ ErrorStatus Can_Init(CanInitStruct* Init) {
 		}
 		count++;
 	}
+	return SUCCESS;
+}
+
+ErrorStatus Can_Normal_Mode(void){
+	uint32_t count = 0;
+	/* Request leave initialization */
+	CLEAR_BIT(CAN->MCR, CAN_MCR_INRQ);
+
+	/* Wait the acknowledge */
+	//todo Start using SysTick
+	count = 0x00;
+	while (IS_BIT_SET(CAN->MSR, CAN_MSR_INAK)) {
+		if (count >= CAN_WAIT_TIMEOUT) {
+			return ERROR;
+		}
+		count++;
+	}
+	return SUCCESS;
+}
+
+ErrorStatus Can_Init(CanInitStruct* Init) {
+	if (Can_Init_Mode() != SUCCESS)
+		return ERROR;
 
 	/* Set the time triggered communication mode */
 
@@ -55,15 +78,9 @@ ErrorStatus Can_Init(CanInitStruct* Init) {
 	CLEAR_BIT(CAN->MCR, CAN_MCR_INRQ);
 
 	/* Wait the acknowledge */
-	//todo Start using SysTick
-	count = 0x00;
-	while (IS_BIT_SET(CAN->MSR, CAN_MSR_INAK)) {
-		if (count >= CAN_WAIT_TIMEOUT) {
-			return ERROR;
-		}
-		count++;
-	}
-	return SUCCESS;
+	if (Can_Normal_Mode() == SUCCESS)
+		return SUCCESS;
+	return ERROR;
 }
 
 
@@ -71,9 +88,10 @@ ErrorStatus Can_DeInit(void) {
 	uint32_t count = 0;
 
 	/* Request sleep mode */
-	SET_BIT(CAN->MCR, CAN_MCR_SLEEP);
+	SET_BIT  (CAN->MCR, CAN_MCR_SLEEP);
+	CLEAR_BIT(CAN->MCR, CAN_MCR_INRQ);
 
-	while (IS_BIT_SET(CAN->MSR, CAN_MSR_SLAK)) {
+	while (IS_BIT_CLEAR(CAN->MSR, CAN_MSR_SLAK)) {
 		if (count >= CAN_WAIT_TIMEOUT) {
 			return ERROR;
 		}

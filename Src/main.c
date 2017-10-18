@@ -152,8 +152,9 @@ static void vTaskSendCanFrameToUsart(void *pvParameters) {
 //			Format the string using sprintf
 //			sprintf(bufDMAtoUSART, "StdID->0x%lX \r\n", rxMessageCAN.StdId);
 //			Send this string to Terminal
-//				print(bufDMAtoUSART);
-//				print ("UseTAB key for completion\n\rCommand:\n\r\0");
+				if (prl->cmdlen == 0){
+					print("......help.......\n\r");
+				}
 			}
 		}
 	}

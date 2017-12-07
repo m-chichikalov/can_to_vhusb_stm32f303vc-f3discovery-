@@ -24,7 +24,7 @@
 	#define _SCMD_FILTER_OFF   "off"
 	#define _SCMD_FILTER_SET   "set"
 
-extern cicle_buffer_t* pc_b;
+extern circular_buffer_t* pc_b;
 extern char * prompt_default;
 
 typedef struct {
@@ -62,7 +62,7 @@ uint32_t ascii_to_int(char* str);
 //*****************************************************************************
 void print (const char * str)
 { //put string into the buffer
-	c_b_put_into(pc_b, str);
+	c_b_put_string(pc_b, str);
 //	enable TXE interrupt to send these data
 	LL_USART_EnableIT_TXE(USART1);
 }

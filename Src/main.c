@@ -9,8 +9,8 @@
 microrl_t rl;
 microrl_t * prl = &rl;
 
-cicle_buffer_t c_b;
-cicle_buffer_t* pc_b = &c_b;
+circular_buffer_t c_b;
+circular_buffer_t* pc_b = &c_b;
 
 char * bufDMAtoUSART[30];
 
@@ -183,8 +183,8 @@ void USART1_IRQ_Handler(void) {
 			microrl_insert_char (prl, LL_USART_ReceiveData8(USART1));
 		}
 		else if (LL_USART_IsActiveFlag_TXE(USART1) & LL_USART_IsEnabledIT_TXE(USART1)){
-			if ((c_b_get_p_actual(pc_b)) != (c_b_get_p_used(pc_b)))
-				LL_USART_TransmitData8(USART1, c_b_get_from(pc_b));
+			if (c_b_get_free_space(pc_b) != (LEN_BUFFER-1))
+				LL_USART_TransmitData8(USART1, c_b_get(pc_b));
 			else
 				LL_USART_DisableIT_TXE(USART1);
 		}

@@ -8,6 +8,7 @@
 #define _CMD_OFF       "off?"
 #define _CMD_HELP      "help"
 #define _CMD_CLEAR     "clear"
+
 #define _CMD_CAN       "can"
 // arguments for can
 	#define _SCMD_CAN_OPEN              "open"
@@ -15,6 +16,7 @@
 		#define _SCMD_CAN_OPEN_LISTEN   "listen"
 	#define _SCMD_CAN_CLOSE             "close"
 	#define _SCMD_CAN_SET               "set"
+
 #define _CMD_FILTER     "filter"
 // arguments for can
 	#define _SCMD_FILTER_SHOW  "show"
@@ -42,7 +44,7 @@ bittime set_bitrate[10] = {
 		                   { 0x0500, 0x001c0002},
 		                   { 0x0800, 0x001b0001},
 		                   { 0x1000, 0x00050002},
-		                   { 0x0083, 0x001c0011}};
+		                   { 0x8333, 0x001c0011}};
 
 void print_filters_conf(void);
 void print_help(void);

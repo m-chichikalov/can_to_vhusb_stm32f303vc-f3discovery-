@@ -25,7 +25,6 @@ void c_b_put_into(cicle_buffer_t* pThis, const char* str){
 			if ((pThis->p_actual + 1) == pThis->p_used)
 				break;
 			c_b_modify_buffer(pThis, str[i++]);
-//			i++;
 		} while (str[i-1] != (char)0x0);
 }
 
